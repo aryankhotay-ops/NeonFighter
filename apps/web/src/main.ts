@@ -8,6 +8,7 @@ import { BootScene } from "./scenes/BootScene";
 import { CharacterSelectScene } from "./scenes/CharacterSelectScene";
 import { ControlsScene } from "./scenes/ControlsScene";
 import { CreditsScene } from "./scenes/CreditsScene";
+import { ExitScene } from "./scenes/ExitScene";
 import { FightScene } from "./scenes/FightScene";
 import { MainMenuScene } from "./scenes/MainMenuScene";
 import { MatchResultsScene } from "./scenes/MatchResultsScene";
@@ -35,6 +36,7 @@ const config: Phaser.Types.Core.GameConfig = {
     ControlsScene,
     SettingsScene,
     CreditsScene,
+    ExitScene,
     FightScene,
     PauseScene,
     MatchResultsScene,

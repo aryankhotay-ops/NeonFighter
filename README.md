@@ -25,6 +25,7 @@ The first combat slice includes:
 - Knockdown, quick rise, and super knockdown without quick rise
 - Health, meter, 99-second rounds, KO/time-over, best-of-three score, match result, and rematch
 - Retro arcade main menu with Local Versus, Online Play, Training, Controls, Settings, and Credits
+- A lightweight original Circuit Marshal animation that aims a laser at the hovered/selected menu option and turns the barrel toward the viewer on Exit Game
 - A visible fight pause/menu button plus Esc shortcut, with resume, live audio/effect settings, controls, and exit actions
 - Smooth rendering for every menu and gameplay scene, with high-DPI text, antialiased WebGL output, aligned pointer input, and no scanline overlay
 - Two-player character selection showing every fighter's name, temporary portrait, fighting style, and Super Art
@@ -170,7 +171,7 @@ pnpm test
 pnpm format:check
 ```
 
-The expanded deterministic fixture finishes frame 10,000 with checksum `84f69b8f`. The Phaser scene computes and displays the same fixture checksum in the browser. Fifty-seven automated tests cover all four configurations and matchups, explicit training selection, pause policy, quick-tap latching, deterministic command buffering, production endpoint discovery/configuration, combat, authoritative network input buffering, adaptive delay, rollback/snapshot reconciliation, and rematch voting. Production smoke tests verify origin rejection, health/readiness, HTTP and direct TLS/WSS startup, room creation, joining, automatic room recovery, synchronized fighter state, full match completion, and a same-room rematch reset.
+The expanded deterministic fixture finishes frame 10,000 with checksum `84f69b8f`. The Phaser scene computes and displays the same fixture checksum in the browser. Fifty-nine automated tests cover all four configurations and matchups, menu laser targeting, explicit training selection, pause policy, quick-tap latching, deterministic command buffering, production endpoint discovery/configuration, combat, authoritative network input buffering, adaptive delay, rollback/snapshot reconciliation, and rematch voting. Production smoke tests verify origin rejection, health/readiness, HTTP and direct TLS/WSS startup, room creation, joining, automatic room recovery, synchronized fighter state, full match completion, and a same-room rematch reset.
 
 ## Architecture
 
