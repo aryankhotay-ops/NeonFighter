@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "**/node_modules/**", ".tools/**", "game.js"],
+    ignores: ["**/dist/**", "**/node_modules/**", ".tools/**", ".vercel/**", "game.js"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

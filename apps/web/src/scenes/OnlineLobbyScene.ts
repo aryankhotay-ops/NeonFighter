@@ -9,6 +9,8 @@ import { ArcadeMenu, drawArcadeBackdrop } from "../ui/ArcadeUi";
 
 export class OnlineLobbyScene extends Phaser.Scene {
   private menu!: ArcadeMenu;
+  private content!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
   private statusText!: Phaser.GameObjects.Text;
   private detailText!: Phaser.GameObjects.Text;
   private fighterText!: Phaser.GameObjects.Text;
@@ -17,6 +19,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
   private fighterIndex = 0;
   private busy = false;
   private handedOff = false;
+  private scrollOffset = 0;
   private serverCandidates: readonly string[] = [];
   private serverUrl = "";
   private serverVerified = false;
@@ -33,9 +36,10 @@ export class OnlineLobbyScene extends Phaser.Scene {
     this.serverVerified = false;
     this.busy = false;
     this.handedOff = false;
+    this.scrollOffset = 0;
     drawArcadeBackdrop(this, "Private online lobby");
     this.add
-      .text(640, 118, "ONLINE PLAY", {
+      .text(640, 106, "ONLINE PLAY", {
         color: "#ffffff",
         fontFamily: "Arial Black, sans-serif",
         fontSize: "46px",
@@ -44,8 +48,17 @@ export class OnlineLobbyScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(3);
 
+    this.content = this.add.container(0, 142).setDepth(3);
+    const maskShape = this.add.graphics();
+    maskShape.fillStyle(0xffffff, 1);
+    maskShape.fillRect(70, 142, 1140, 520);
+    maskShape.setVisible(false);
+    this.content.setMask(maskShape.createGeometryMask());
+
+    this.scrollbar = this.add.graphics().setDepth(6);
+
     this.statusText = this.add
-      .text(640, 177, "CHECKING SERVER…", {
+      .text(640, 18, "CHECKING SERVER…", {
         align: "center",
         color: "#ffe45c",
         fontFamily: "monospace",
@@ -53,8 +66,9 @@ export class OnlineLobbyScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(3);
+    this.content.add(this.statusText);
     this.detailText = this.add
-      .text(640, 219, "", {
+      .text(640, 58, "", {
         align: "center",
         color: "#9cabc0",
         fontFamily: "monospace",
@@ -64,9 +78,10 @@ export class OnlineLobbyScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(3);
+    this.content.add(this.detailText);
 
     this.fighterText = this.add
-      .text(640, 275, "", {
+      .text(640, 113, "", {
         align: "center",
         color: "#51e9ff",
         fontFamily: "Arial Black, sans-serif",
@@ -75,8 +90,9 @@ export class OnlineLobbyScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(3);
+    this.content.add(this.fighterText);
     this.roomCodeText = this.add
-      .text(640, 319, "", {
+      .text(640, 158, "", {
         align: "center",
         color: "#ffe45c",
         fontFamily: "monospace",
@@ -85,6 +101,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(3);
+    this.content.add(this.roomCodeText);
 
     this.menu = new ArcadeMenu(
       this,
@@ -121,9 +138,42 @@ export class OnlineLobbyScene extends Phaser.Scene {
         },
       ],
       390,
-      348,
+      197,
       500,
+      {
+        parent: this.content,
+        onSelectionChange: (index) => this.ensureMenuItemVisible(index),
+      },
     );
+
+    this.add
+      .text(1191, 126, "SCROLL", {
+        color: "#71819b",
+        fontFamily: "monospace",
+        fontSize: "9px",
+        letterSpacing: 2,
+      })
+      .setOrigin(0.5)
+      .setDepth(6);
+    this.add
+      .text(640, 690, "MOUSE WHEEL TO SCROLL · ARROWS + ENTER TO NAVIGATE", {
+        align: "center",
+        color: "#71819b",
+        fontFamily: "monospace",
+        fontSize: "10px",
+      })
+      .setOrigin(0.5)
+      .setDepth(6);
+    this.input.on(
+      "wheel",
+      (
+        _pointer: Phaser.Input.Pointer,
+        _gameObjects: Phaser.GameObjects.GameObject[],
+        _deltaX: number,
+        deltaY: number,
+      ) => this.setScrollOffset(this.scrollOffset + Math.sign(deltaY) * 58),
+    );
+    this.drawScrollbar();
     this.renderFighter();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (!this.handedOff) void this.network?.leave();
@@ -133,6 +183,35 @@ export class OnlineLobbyScene extends Phaser.Scene {
 
   public override update(): void {
     if (!this.busy) this.menu.update();
+  }
+
+  private ensureMenuItemVisible(index: number): void {
+    const itemTop = 197 + index * 64;
+    const itemBottom = itemTop + 56;
+    const visibleTop = this.scrollOffset + 10;
+    const visibleBottom = this.scrollOffset + 510;
+    if (itemTop < visibleTop) this.setScrollOffset(itemTop - 10);
+    else if (itemBottom > visibleBottom) this.setScrollOffset(itemBottom - 510);
+  }
+
+  private setScrollOffset(offset: number): void {
+    this.scrollOffset = Phaser.Math.Clamp(offset, 0, 72);
+    this.content.y = 142 - this.scrollOffset;
+    this.drawScrollbar();
+  }
+
+  private drawScrollbar(): void {
+    if (!this.scrollbar) return;
+    const trackY = 145;
+    const trackHeight = 510;
+    const thumbHeight = 442;
+    const travel = trackHeight - thumbHeight;
+    const thumbY = trackY + (this.scrollOffset / 72) * travel;
+    this.scrollbar.clear();
+    this.scrollbar.fillStyle(0x13243b, 0.82);
+    this.scrollbar.fillRoundedRect(1187, trackY, 8, trackHeight, 4);
+    this.scrollbar.fillStyle(0x58e9ff, 0.84);
+    this.scrollbar.fillRoundedRect(1187, thumbY, 8, thumbHeight, 4);
   }
 
   private get selectedFighter(): FighterId {

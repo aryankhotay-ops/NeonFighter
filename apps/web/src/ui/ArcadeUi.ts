@@ -7,6 +7,11 @@ export interface MenuItem {
   readonly disabled?: boolean;
 }
 
+export interface ArcadeMenuOptions {
+  readonly parent?: Phaser.GameObjects.Container;
+  readonly onSelectionChange?: (index: number) => void;
+}
+
 export function drawArcadeBackdrop(scene: Phaser.Scene, subtitle: string): void {
   const graphics = scene.add.graphics().setDepth(0);
   graphics.fillGradientStyle(0x030611, 0x030611, 0x1b0b2b, 0x1b0b2b, 1);
@@ -73,6 +78,7 @@ export class ArcadeMenu {
   private readonly entries: Phaser.GameObjects.Container[] = [];
   private readonly items: readonly MenuItem[];
   private readonly baseX: number;
+  private readonly onSelectionChange: ((index: number) => void) | undefined;
   private selected = 0;
   private keyUp: Phaser.Input.Keyboard.Key;
   private keyDown: Phaser.Input.Keyboard.Key;
@@ -85,10 +91,12 @@ export class ArcadeMenu {
     x: number,
     y: number,
     width = 480,
+    options: ArcadeMenuOptions = {},
   ) {
     this.scene = scene;
     this.items = items;
     this.baseX = x;
+    this.onSelectionChange = options.onSelectionChange;
     const keyboard = scene.input.keyboard;
     if (!keyboard) throw new Error("Keyboard input is unavailable.");
     this.keyUp = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
@@ -115,6 +123,7 @@ export class ArcadeMenu {
       const container = scene.add
         .container(x, y + index * 64, [background, label, detail])
         .setDepth(3);
+      options.parent?.add(container);
       container.setSize(width, 56).setInteractive({ useHandCursor: !item.disabled });
       container.on("pointerover", () => this.select(index));
       container.on("pointerdown", () => this.activate(index));
@@ -122,6 +131,7 @@ export class ArcadeMenu {
     });
     this.selected = this.firstEnabled(0, 1);
     this.renderSelection();
+    this.onSelectionChange?.(this.selected);
   }
 
   public update(): void {
@@ -141,6 +151,7 @@ export class ArcadeMenu {
     if (this.items[index]?.disabled) return;
     this.selected = index;
     this.renderSelection();
+    this.onSelectionChange?.(this.selected);
   }
 
   private activate(index: number): void {

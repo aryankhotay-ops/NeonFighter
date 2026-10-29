@@ -34,6 +34,7 @@ The first combat slice includes:
 - A dedicated post-match results screen
 - Functional settings for music/SFX volume, screen shake, and reduced flash
 - Private online rooms created or joined through a shareable room code
+- A clipped, scrollable Online Play panel with mouse-wheel scrolling, a visible scrollbar, and keyboard selection that automatically keeps the active option in view
 - Server-authoritative synchronized fights with adaptive input delay, held-input jitter handling, client rollback, checksums, and correction snapshots
 - A 10-second reconnection grace period and live RTT/jitter/rollback diagnostics
 - A deterministic 10,000-frame replay fixture plus combat regression tests
