@@ -1,0 +1,5 @@
+.tools
+node_modules
+coverage
+**/*.log
+apps/server/dist

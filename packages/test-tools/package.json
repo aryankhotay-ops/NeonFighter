@@ -1,0 +1,15 @@
+{
+  "name": "@neon-rivals/test-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/replay.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@neon-rivals/simulation": "workspace:*"
+  }
+}

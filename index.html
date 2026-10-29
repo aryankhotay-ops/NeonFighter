@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07111f" />
+  <title>Neon Rivals — Browser Arcade Fighter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="game-shell" aria-label="Neon Rivals arcade fighting game">
+    <header class="brand-bar">
+      <div>
+        <p class="eyebrow">ORIGINAL BROWSER ARCADE FIGHTER</p>
+        <h1>NEON <span>RIVALS</span></h1>
+      </div>
+      <button id="sound-toggle" class="icon-button" type="button" aria-pressed="true">SOUND: ON</button>
+    </header>
+
+    <section class="cabinet">
+      <div id="game-wrap" class="game-wrap">
+        <canvas id="game" width="1280" height="720" aria-label="Fighting game canvas"></canvas>
+        <div class="scanlines" aria-hidden="true"></div>
+
+        <section id="title-screen" class="screen-panel active" aria-labelledby="game-title">
+          <div class="panel-card title-card">
+            <p class="kicker">THE CITY NEVER STOPS FIGHTING</p>
+            <h2 id="game-title">NEON<br /><span>RIVALS</span></h2>
+            <p class="subtitle">An original 2D arcade fighter built for the browser.</p>
+            <div class="menu-stack">
+              <button class="menu-button primary" type="button" data-mode="arcade">ARCADE · VS CPU</button>
+              <button class="menu-button" type="button" data-mode="versus">LOCAL VERSUS</button>
+              <button id="how-to-button" class="menu-button ghost" type="button">HOW TO PLAY</button>
+            </div>
+            <p class="press-start">PRESS ENTER TO START ARCADE</p>
+          </div>
+        </section>
+
+        <section id="select-screen" class="screen-panel" aria-labelledby="select-title">
+          <div class="panel-card select-card">
+            <div class="select-heading">
+              <p>SELECT YOUR FIGHTER</p>
+              <h2 id="select-title">CHOOSE A RIVAL</h2>
+            </div>
+            <div id="fighter-grid" class="fighter-grid"></div>
+            <div class="select-footer">
+              <p id="select-instruction">PLAYER 1 — CHOOSE</p>
+              <button id="select-back" class="menu-button ghost" type="button">BACK</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="help-screen" class="screen-panel" aria-labelledby="help-title">
+          <div class="panel-card help-card">
+            <h2 id="help-title">HOW TO PLAY</h2>
+            <div class="controls-columns">
+              <article>
+                <h3>PLAYER 1</h3>
+                <p><kbd>A</kbd> <kbd>D</kbd> Move</p>
+                <p><kbd>W</kbd> Jump</p>
+                <p><kbd>S</kbd> Crouch / Block low</p>
+                <p><kbd>F</kbd> Light attack</p>
+                <p><kbd>G</kbd> Heavy attack</p>
+                <p><kbd>H</kbd> Special attack</p>
+              </article>
+              <article>
+                <h3>PLAYER 2</h3>
+                <p><kbd>←</kbd> <kbd>→</kbd> Move</p>
+                <p><kbd>↑</kbd> Jump</p>
+                <p><kbd>↓</kbd> Crouch / Block low</p>
+                <p><kbd>J</kbd> Light attack</p>
+                <p><kbd>K</kbd> Heavy attack</p>
+                <p><kbd>L</kbd> Special attack</p>
+              </article>
+            </div>
+            <div class="rules-copy">
+              <p>Hold away from your opponent to block. Fill the DRIVE meter by attacking and taking damage. At full meter, press Special for a cinematic super.</p>
+              <p>Win two rounds before the timer expires.</p>
+            </div>
+            <button id="help-back" class="menu-button primary" type="button">GOT IT</button>
+          </div>
+        </section>
+
+        <section id="pause-screen" class="screen-panel" aria-labelledby="pause-title">
+          <div class="panel-card pause-card">
+            <p>FIGHT INTERRUPTED</p>
+            <h2 id="pause-title">PAUSED</h2>
+            <button id="resume-button" class="menu-button primary" type="button">RESUME</button>
+            <button id="quit-button" class="menu-button ghost" type="button">QUIT TO TITLE</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <p><strong>Keyboard:</strong> P1 uses WASD + F/G/H · P2 uses arrows + J/K/L · Esc pauses</p>
+      <p>Original characters, visual design, code, and sound synthesis.</p>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

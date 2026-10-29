@@ -1,0 +1,23 @@
+{
+  "name": "@neon-rivals/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc --noEmit && tsup",
+    "start": "node --env-file-if-exists=../../.env dist/index.js",
+    "start:production": "node --env-file-if-exists=../../.env dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@colyseus/core": "0.18.10",
+    "@colyseus/ws-transport": "0.18.4",
+    "@neon-rivals/protocol": "workspace:*",
+    "@neon-rivals/simulation": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15",
+    "tsup": "9.0.0"
+  }
+}

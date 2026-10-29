@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.tools/
+coverage/
+
+# Standalone pre-TypeScript visual prototype; retained unchanged as reference.
+/game.js
+/index.html
+/styles.css
