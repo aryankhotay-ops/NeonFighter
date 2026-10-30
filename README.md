@@ -2,7 +2,7 @@
 
 Neon Rivals is an original browser-based 2D fighting game under incremental development. Its deterministic TypeScript simulation is shared by a Phaser 3 browser client and a Node.js server shell. It does **not** use Street Fighter characters, names, stages, source code, audio, exact frame data, or artwork.
 
-**Play it:** https://aryankhotay-ops.github.io/NeonFighter/ — a permanent GitHub Pages link, rebuilt and redeployed automatically by [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) on every push to `main`. Local Versus, Training, and all menus work there; Online Play additionally needs a permanently hosted multiplayer server (see [Build for production](#build-for-production) and the `VITE_SERVER_URL` repository variable).
+**Play it:** https://neonfighter.vercel.app — the permanent Vercel production deployment (project `aryankhotay-5437/neonfighter`), built from this repository with the included `vercel.json`. Local Versus, Training, and all menus always work; Online Play needs the multiplayer server referenced by the Vercel `VITE_SERVER_URL` environment variable to be running (see [Build for production](#build-for-production)).
 
 See the complete milestone sequence in [Plan.md](Plan.md) and the sourced mechanics research in [docs/combat-design-references.md](docs/combat-design-references.md).
 
@@ -156,9 +156,7 @@ pnpm start:server
 
 The server start command reads the root `.env` when it exists. Production requires an explicit `ALLOWED_ORIGINS` list. HTTPS/WSS may terminate at a trusted reverse proxy, or directly in Node when both TLS certificate-path variables are configured. Full environment, health-check, limit, and reverse-proxy guidance is in `docs/deployment.md`.
 
-The permanent public frontend is GitHub Pages at https://aryankhotay-ops.github.io/NeonFighter/. The `Deploy to GitHub Pages` workflow runs the tests, builds `apps/web` with `VITE_BASE_PATH=/NeonFighter/`, and publishes it on every push to `main`. To enable Online Play there, set the repository Actions variable `VITE_SERVER_URL` to a permanently hosted HTTPS Colyseus endpoint and add `https://aryankhotay-ops.github.io` to that server's `ALLOWED_ORIGINS`.
-
-The included `vercel.json` can alternatively deploy the static frontend from the repository root. Set Vercel's `VITE_SERVER_URL` to an externally hosted HTTPS Colyseus endpoint. Persistent multiplayer WebSocket rooms require a long-running server and cannot run inside Vercel's static/serverless frontend deployment, or on GitHub Pages.
+The game is hosted on Vercel at https://neonfighter.vercel.app. The included `vercel.json` deploys the frontend from the repository root, and every push to `main` redeploys production once the GitHub repository is connected to the Vercel project (Vercel -> Project `neonfighter` -> Settings -> Git). Set Vercel's `VITE_SERVER_URL` to an externally hosted HTTPS Colyseus endpoint and add `https://neonfighter.vercel.app` to that server's `ALLOWED_ORIGINS`. Persistent multiplayer WebSocket rooms require a long-running server and cannot run inside Vercel's static/serverless frontend deployment.
 
 Example temporary port override:
 
