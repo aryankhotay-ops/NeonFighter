@@ -2,12 +2,12 @@
 
 ## Implemented slice
 
-Neon Rivals uses ephemeral two-player Colyseus rooms. The host creates a `fight` room and shares its four-character uppercase alphanumeric room code; the challenger joins that exact code. Ambiguous `I`, `O`, `0`, and `1` glyphs are excluded, and active codes are reserved so one server process cannot issue a duplicate. Join options contain only protocol version and selected fighter. No account, profile, ranking, matchmaking database, or persistent room state is involved.
+Neon Rivals uses ephemeral two-player Colyseus rooms. The host creates a `fight` room and shares its four-character uppercase alphanumeric room code; the challenger joins that exact code. Ambiguous `I`, `O`, `0`, and `1` glyphs are excluded, and active codes are reserved so one server process cannot issue a duplicate. Join options contain protocol version, selected fighter, and selected Fight Theme. The first occupied seat is the host, and its theme becomes authoritative in every match/rematch handoff so both clients render the same arena. No account, profile, ranking, matchmaking database, or persistent room state is involved.
 
 ## Authoritative flow
 
 1. Both clients join with matching protocol version 3 (the Guard-control input layout).
-2. The room assigns deterministic player indexes and starts when both seats are occupied.
+2. The room assigns deterministic player indexes, adopts Player 1's Fight Theme, and starts when both seats are occupied.
 3. Clients schedule input into a short future frame buffer and send only button bits, frame, and sequence.
 4. The server validates frame windows, sequence monotonicity, and the input bit mask.
 5. A Colyseus fixed timestep advances the shared simulation at 60 Hz.

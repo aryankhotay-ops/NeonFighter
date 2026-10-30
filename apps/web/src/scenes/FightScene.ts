@@ -27,10 +27,16 @@ import { FighterView } from "../presentation/FighterView";
 import { getFighterPresentation } from "../presentation/FighterPresentationConfig";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
 import { StageView } from "../presentation/StageView";
-import { loadSettings, stageArtLabel, type GameSettings } from "../settings/GameSettings";
+import {
+  loadSettings,
+  stageArtLabel,
+  type GameSettings,
+  type StageArt,
+} from "../settings/GameSettings";
 
 interface FightSceneData extends Partial<MatchSetup> {
   readonly onlineClient?: OnlineFightClient;
+  readonly fightTheme?: StageArt;
 }
 
 export class FightScene extends Phaser.Scene {
@@ -39,6 +45,7 @@ export class FightScene extends Phaser.Scene {
   private readonly effects = new CombatEffects();
   private readonly audio = new AudioManager();
   private settings: GameSettings = loadSettings();
+  private fightTheme: StageArt = "transit";
   private matchSetup: MatchSetup = DEFAULT_MATCH_SETUP;
   private onlineClient: OnlineFightClient | null = null;
   private rollback: OnlineRollbackController | null = null;
@@ -72,6 +79,8 @@ export class FightScene extends Phaser.Scene {
   }
 
   public init(data: FightSceneData): void {
+    this.settings = loadSettings();
+    this.fightTheme = data.fightTheme ?? this.settings.stageArt;
     this.matchSetup = normalizeMatchSetup(data);
     this.onlineClient = data.onlineClient ?? null;
     this.rollback = null;
@@ -87,7 +96,6 @@ export class FightScene extends Phaser.Scene {
     this.resultsScheduled = false;
     this.pauseMenuOpen = false;
     this.renderedFighterPositions = [null, null];
-    this.settings = loadSettings();
   }
 
   public create(): void {
@@ -96,7 +104,7 @@ export class FightScene extends Phaser.Scene {
     const keyboard = this.input.keyboard;
     if (!keyboard) throw new Error("Keyboard input is unavailable.");
     this.pauseKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    this.stageView = new StageView(this, this.settings.stageArt);
+    this.stageView = new StageView(this, this.fightTheme);
     this.fighterLayer = this.add.graphics().setDepth(2);
     this.effectLayer = this.add.graphics().setDepth(3);
     this.hudBaseLayer = this.add.graphics().setDepth(4);
@@ -115,7 +123,7 @@ export class FightScene extends Phaser.Scene {
       .setDepth(6);
 
     this.stageTitleText = this.add
-      .text(46, 58, `${stageArtLabel(this.settings.stageArt)} · ORIGINAL COMBAT PRESENTATION`, {
+      .text(46, 58, `${stageArtLabel(this.fightTheme)} · ORIGINAL COMBAT PRESENTATION`, {
         color: "#79eaff",
         fontFamily: "monospace",
         fontSize: "11px",
@@ -324,6 +332,7 @@ export class FightScene extends Phaser.Scene {
         this.scene.stop("pause-menu");
         this.scene.start("match-results", {
           ...this.matchSetup,
+          fightTheme: this.fightTheme,
           winner: round.winner ?? -1,
           scores: [round.scores[0], round.scores[1]],
           roundsPlayed: round.number,
@@ -497,10 +506,9 @@ export class FightScene extends Phaser.Scene {
 
   public refreshFightSettings(): void {
     this.settings = loadSettings();
-    this.stageView.setStageArt(this.settings.stageArt);
-    this.stageTitleText.setText(
-      `${stageArtLabel(this.settings.stageArt)} · ORIGINAL COMBAT PRESENTATION`,
-    );
+    this.fightTheme = this.settings.stageArt;
+    this.stageView.setStageArt(this.fightTheme);
+    this.stageTitleText.setText(`${stageArtLabel(this.fightTheme)} · ORIGINAL COMBAT PRESENTATION`);
     this.audio.unlock();
   }
 
@@ -510,6 +518,7 @@ export class FightScene extends Phaser.Scene {
     this.inputSource.clearBufferedActions();
     this.scene.launch("pause-menu", {
       ...this.matchSetup,
+      fightTheme: this.fightTheme,
       ...(this.onlineClient ? { onlineClient: this.onlineClient } : {}),
     });
     if (shouldPauseSimulation(this.matchSetup.mode)) this.scene.pause("fight");

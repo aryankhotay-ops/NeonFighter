@@ -11,7 +11,7 @@ import {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("game settings", () => {
-  it("cycles through all four animated background-art choices", () => {
+  it("cycles through all four animated Fight Themes", () => {
     let stage = DEFAULT_SETTINGS.stageArt;
     const visited = new Set([stage]);
     for (let index = 0; index < STAGE_ART_IDS.length - 1; index += 1) {

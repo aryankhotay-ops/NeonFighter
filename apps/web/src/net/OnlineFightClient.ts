@@ -7,6 +7,7 @@ import {
   PROTOCOL_VERSION,
   type AuthoritativeFrameMessage,
   type FightJoinOptions,
+  type FightTheme,
   type FightRoomStatusMessage,
   type FightWelcomeMessage,
   type LatencyPongMessage,
@@ -116,17 +117,17 @@ export class OnlineFightClient {
     };
   }
 
-  public async create(fighterId: FighterId): Promise<void> {
-    await this.connect("create", fighterId);
+  public async create(fighterId: FighterId, fightTheme: FightTheme): Promise<void> {
+    await this.connect("create", fighterId, fightTheme);
   }
 
-  public async join(roomId: string, fighterId: FighterId): Promise<void> {
+  public async join(roomId: string, fighterId: FighterId, fightTheme: FightTheme): Promise<void> {
     const normalizedRoomId = roomId.trim().toUpperCase();
     if (!normalizedRoomId) throw new Error("Enter a room code.");
     if (!/^[A-Z2-9]{4}$/.test(normalizedRoomId) || /[IO01]/.test(normalizedRoomId)) {
       throw new Error("Room codes contain exactly four uppercase letters or numbers.");
     }
-    await this.connect("join", fighterId, normalizedRoomId);
+    await this.connect("join", fighterId, fightTheme, normalizedRoomId);
   }
 
   public async recover(): Promise<void> {
@@ -250,11 +251,12 @@ export class OnlineFightClient {
   private async connect(
     method: "create" | "join",
     fighterId: FighterId,
+    fightTheme: FightTheme,
     roomId?: string,
   ): Promise<void> {
     await this.leave();
     this.resetSession();
-    const options: FightJoinOptions = { protocolVersion: PROTOCOL_VERSION, fighterId };
+    const options: FightJoinOptions = { protocolVersion: PROTOCOL_VERSION, fighterId, fightTheme };
     this.room =
       method === "create"
         ? await this.sdk.create(FIGHT_ROOM_NAME, options)

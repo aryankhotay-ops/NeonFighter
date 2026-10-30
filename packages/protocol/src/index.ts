@@ -11,6 +11,8 @@ export const MAX_INPUT_DELAY_FRAMES = 6;
 export const SNAPSHOT_INTERVAL_FRAMES = 20;
 export const INPUT_FUTURE_WINDOW_FRAMES = 20;
 export const INPUT_PAST_WINDOW_FRAMES = 3;
+export const FIGHT_THEME_IDS = ["transit", "rooftop", "reactor", "harbor"] as const;
+export type FightTheme = (typeof FIGHT_THEME_IDS)[number];
 
 export const FIGHT_MESSAGE = {
   welcome: "fight:welcome",
@@ -32,6 +34,8 @@ export const FIGHT_MESSAGE = {
 export interface FightJoinOptions {
   readonly protocolVersion: typeof PROTOCOL_VERSION;
   readonly fighterId: FighterId;
+  /** The host's selection becomes the shared room theme. */
+  readonly fightTheme: FightTheme;
 }
 
 export interface FightWelcomeMessage {
@@ -54,6 +58,7 @@ export interface MatchReadyMessage {
   readonly matchNumber: number;
   readonly fighters: readonly [FighterId, FighterId];
   readonly playerIndex: 0 | 1;
+  readonly fightTheme: FightTheme;
   readonly initialState: GameState;
   readonly serverTime: number;
 }

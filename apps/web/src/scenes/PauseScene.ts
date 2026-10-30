@@ -9,12 +9,14 @@ import {
   saveSettings,
   stageArtLabel,
   type GameSettings,
+  type StageArt,
 } from "../settings/GameSettings";
 import { ArcadeMenu, type MenuItem } from "../ui/ArcadeUi";
 import type { FightScene } from "./FightScene";
 
 export interface PauseSceneData extends MatchSetup {
   readonly onlineClient?: OnlineFightClient;
+  readonly fightTheme?: StageArt;
 }
 
 export class PauseScene extends Phaser.Scene {
@@ -32,6 +34,7 @@ export class PauseScene extends Phaser.Scene {
   public init(data: PauseSceneData): void {
     this.pauseData = data;
     this.settings = loadSettings();
+    if (data.fightTheme) this.settings.stageArt = data.fightTheme;
     this.exiting = false;
   }
 
@@ -149,7 +152,7 @@ export class PauseScene extends Phaser.Scene {
         },
       },
       {
-        label: "Background Art",
+        label: "Fight Theme",
         detail: stageArtLabel(this.settings.stageArt),
         onSelect: () => {
           this.settings.stageArt = nextStageArt(this.settings.stageArt);

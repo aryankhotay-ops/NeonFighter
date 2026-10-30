@@ -4,10 +4,12 @@ import type { MatchResultData } from "../game/GameFlow";
 import type { OnlineFightClient } from "../net/OnlineFightClient";
 import { getFighterPresentation } from "../presentation/FighterPresentationConfig";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
+import { loadSettings, type StageArt } from "../settings/GameSettings";
 import { ArcadeMenu, drawArcadeBackdrop, type MenuItem } from "../ui/ArcadeUi";
 
 interface MatchResultsSceneData extends MatchResultData {
   readonly onlineClient?: OnlineFightClient;
+  readonly fightTheme?: StageArt;
 }
 
 export class MatchResultsScene extends Phaser.Scene {
@@ -15,6 +17,7 @@ export class MatchResultsScene extends Phaser.Scene {
   private statusText!: Phaser.GameObjects.Text;
   private onlineClient: OnlineFightClient | null = null;
   private finishedMatchNumber = 0;
+  private fightTheme: StageArt = "transit";
   private handedOff = false;
   private readonly unsubscribe: Array<() => void> = [];
   private result: MatchResultData = {
@@ -33,6 +36,7 @@ export class MatchResultsScene extends Phaser.Scene {
 
   public init(data: MatchResultsSceneData): void {
     this.result = data;
+    this.fightTheme = data.fightTheme ?? loadSettings().stageArt;
     this.onlineClient = data.onlineClient ?? null;
     this.finishedMatchNumber = this.onlineClient?.currentMatchNumber ?? 0;
     this.handedOff = false;
@@ -148,6 +152,7 @@ export class MatchResultsScene extends Phaser.Scene {
             fighters: this.result.fighters,
             opponent: this.result.opponent,
             cpuDifficulty: this.result.cpuDifficulty,
+            fightTheme: this.fightTheme,
           }),
       },
       {
@@ -200,6 +205,7 @@ export class MatchResultsScene extends Phaser.Scene {
         this.scene.start("fight", {
           mode: "online",
           fighters: ready.fighters,
+          fightTheme: ready.fightTheme,
           onlineClient: network,
         });
       }),

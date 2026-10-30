@@ -163,8 +163,8 @@ describe("online rollback reconciliation", () => {
     }
     rollback.advance(0);
 
-    // One normal step plus the bounded two-frame catch-up; never an unbounded replay burst.
-    expect(simulation.state.frame).toBe(3);
+    // One normal step plus the bounded four-frame catch-up; never an unbounded replay burst.
+    expect(simulation.state.frame).toBe(5);
     rollback.dispose();
   });
 

@@ -5,7 +5,16 @@ import { loadWebRuntimeConfig } from "../config";
 import { OnlineFightClient } from "../net/OnlineFightClient";
 import { getFighterPresentation } from "../presentation/FighterPresentationConfig";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
+import {
+  loadSettings,
+  nextStageArt,
+  saveSettings,
+  stageArtLabel,
+  type GameSettings,
+} from "../settings/GameSettings";
 import { ArcadeMenu, drawArcadeBackdrop } from "../ui/ArcadeUi";
+
+const MAX_SCROLL_OFFSET = 136;
 
 export class OnlineLobbyScene extends Phaser.Scene {
   private menu!: ArcadeMenu;
@@ -23,6 +32,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
   private serverCandidates: readonly string[] = [];
   private serverUrl = "";
   private serverVerified = false;
+  private settings!: GameSettings;
 
   public constructor() {
     super("online-lobby");
@@ -31,6 +41,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
   public create(): void {
     configureSmoothCamera(this);
     const runtimeConfig = loadWebRuntimeConfig();
+    this.settings = loadSettings();
     this.serverCandidates = runtimeConfig.multiplayerServerCandidates;
     this.serverUrl = runtimeConfig.multiplayerServerUrl;
     this.serverVerified = false;
@@ -127,6 +138,11 @@ export class OnlineLobbyScene extends Phaser.Scene {
           onSelect: () => void this.changeFighter(),
         },
         {
+          label: "Fight Theme",
+          detail: stageArtLabel(this.settings.stageArt),
+          onSelect: () => void this.changeFightTheme(),
+        },
+        {
           label: "Refresh Server",
           detail: "HEALTH CHECK",
           onSelect: () => void this.checkServer(),
@@ -195,7 +211,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
   }
 
   private setScrollOffset(offset: number): void {
-    this.scrollOffset = Phaser.Math.Clamp(offset, 0, 72);
+    this.scrollOffset = Phaser.Math.Clamp(offset, 0, MAX_SCROLL_OFFSET);
     this.content.y = 142 - this.scrollOffset;
     this.drawScrollbar();
   }
@@ -204,9 +220,9 @@ export class OnlineLobbyScene extends Phaser.Scene {
     if (!this.scrollbar) return;
     const trackY = 145;
     const trackHeight = 510;
-    const thumbHeight = 442;
+    const thumbHeight = 410;
     const travel = trackHeight - thumbHeight;
-    const thumbY = trackY + (this.scrollOffset / 72) * travel;
+    const thumbY = trackY + (this.scrollOffset / MAX_SCROLL_OFFSET) * travel;
     this.scrollbar.clear();
     this.scrollbar.fillStyle(0x13243b, 0.82);
     this.scrollbar.fillRoundedRect(1187, trackY, 8, trackHeight, 4);
@@ -227,7 +243,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
       await this.network?.leave();
       const network = new OnlineFightClient(this.serverUrl);
       this.network = network;
-      await network.create(this.selectedFighter);
+      await network.create(this.selectedFighter, this.settings.stageArt);
       this.bindNetwork(network);
       this.statusText.setText("WAITING FOR CHALLENGER").setColor("#67f28a");
       this.roomCodeText.setText(`ROOM CODE  ${network.roomId ?? "…"}`);
@@ -251,7 +267,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
       await this.network?.leave();
       const network = new OnlineFightClient(this.serverUrl);
       this.network = network;
-      await network.join(roomId, this.selectedFighter);
+      await network.join(roomId, this.selectedFighter, this.settings.stageArt);
       this.bindNetwork(network);
       this.statusText.setText("CONNECTED · SYNCHRONIZING").setColor("#67f28a");
       this.roomCodeText.setText(`ROOM CODE  ${network.roomId ?? roomId}`);
@@ -300,6 +316,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
           winner: round.winner ?? -1,
           scores: [round.scores[0], round.scores[1]],
           roundsPlayed: round.number,
+          fightTheme: ready.fightTheme,
           onlineClient: network,
         });
       } else {
@@ -307,6 +324,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
         this.scene.start("fight", {
           mode: "online",
           fighters: ready.fighters,
+          fightTheme: ready.fightTheme,
           onlineClient: network,
         });
       }
@@ -331,12 +349,22 @@ export class OnlineLobbyScene extends Phaser.Scene {
     this.renderFighter();
   }
 
+  private async changeFightTheme(): Promise<void> {
+    if (this.busy) return;
+    this.busy = true;
+    await this.network?.leave();
+    this.network = null;
+    this.settings.stageArt = nextStageArt(this.settings.stageArt);
+    saveSettings(this.settings);
+    this.scene.restart();
+  }
+
   private renderFighter(): void {
     const fighter = getFighterDefinition(this.selectedFighter);
     const presentation = getFighterPresentation(this.selectedFighter);
     this.fighterText
       .setText(
-        `${fighter.name.toUpperCase()} · ${fighter.fightingStyle}\nSUPER ART  ${fighter.moves.super.label}`,
+        `${fighter.name.toUpperCase()} · ${fighter.fightingStyle}\nSUPER ART  ${fighter.moves.super.label} · THEME  ${stageArtLabel(this.settings.stageArt)}`,
       )
       .setColor(`#${presentation.primary.toString(16).padStart(6, "0")}`);
   }

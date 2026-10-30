@@ -3,6 +3,7 @@ import {
   BASE_INPUT_DELAY_FRAMES,
   FIGHT_MESSAGE,
   FIGHT_ROOM_NAME,
+  FIGHT_THEME_IDS,
   NETWORK_TICK_RATE,
   PROTOCOL_VERSION,
   SNAPSHOT_INTERVAL_FRAMES,
@@ -10,6 +11,7 @@ import {
   type FightJoinOptions,
   type FightRoomStatusMessage,
   type FightWelcomeMessage,
+  type FightTheme,
   type LatencyPingMessage,
   type LatencyPongMessage,
   type MatchReadyMessage,
@@ -54,6 +56,7 @@ export class FightRoom extends Room {
   private running = false;
   private matchNumber = 1;
   private hasStartedMatch = false;
+  private fightTheme: FightTheme = "transit";
 
   public override onCreate(options: FightRoomOptions): void {
     // Colyseus explicitly permits replacing its generated ID during onCreate. Reserve the code
@@ -86,6 +89,9 @@ export class FightRoom extends Room {
     if (!FIGHTER_IDS.includes(options.fighterId)) {
       throw new ServerError(4002, "Unknown fighter selection.");
     }
+    if (!FIGHT_THEME_IDS.includes(options.fightTheme)) {
+      throw new ServerError(4004, "Unknown fight theme.");
+    }
     return true;
   }
 
@@ -93,11 +99,13 @@ export class FightRoom extends Room {
     const index = this.nextAvailableIndex();
     if (index === null) throw new ServerError(4003, "Fight room is full.");
 
+    if (index === 0) this.fightTheme = options.fightTheme;
     this.players.set(client.sessionId, { index, fighterId: options.fighterId });
     logInfo("room.player_joined", {
       roomId: this.roomId,
       playerIndex: index,
       fighterId: options.fighterId,
+      fightTheme: this.fightTheme,
       connectedPlayers: this.players.size,
     });
     const welcome: FightWelcomeMessage = {
@@ -226,6 +234,7 @@ export class FightRoom extends Room {
         matchNumber: this.matchNumber,
         fighters,
         playerIndex: slot.index,
+        fightTheme: this.fightTheme,
         initialState: cloneGameState(this.simulation.state),
         serverTime: Date.now(),
       };
@@ -253,6 +262,7 @@ export class FightRoom extends Room {
         matchNumber: this.matchNumber,
         fighters: [first.fighterId, second.fighterId],
         playerIndex: slot.index,
+        fightTheme: this.fightTheme,
         initialState: cloneGameState(this.simulation.state),
         serverTime: Date.now(),
       };

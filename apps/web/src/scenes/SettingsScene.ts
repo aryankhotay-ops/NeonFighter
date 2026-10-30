@@ -77,7 +77,7 @@ export class SettingsScene extends Phaser.Scene {
         },
       },
       {
-        label: "Background Art",
+        label: "Fight Theme",
         detail: stageArtLabel(this.settings.stageArt),
         onSelect: () => {
           this.settings.stageArt = nextStageArt(this.settings.stageArt);

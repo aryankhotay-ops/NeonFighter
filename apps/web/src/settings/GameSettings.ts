@@ -1,5 +1,7 @@
-export const STAGE_ART_IDS = ["transit", "rooftop", "reactor", "harbor"] as const;
-export type StageArt = (typeof STAGE_ART_IDS)[number];
+import { FIGHT_THEME_IDS, type FightTheme } from "@neon-rivals/protocol";
+
+export const STAGE_ART_IDS = FIGHT_THEME_IDS;
+export type StageArt = FightTheme;
 
 export interface GameSettings {
   musicVolume: number;

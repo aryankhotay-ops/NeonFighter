@@ -36,7 +36,7 @@ The first combat slice includes:
 - Per-player lock indicators plus a final matchup review showing both selections before the match starts
 - Explicit cancellation: undo the final Player 2 choice, undo Player 1's lock, or return to the main menu
 - A dedicated post-match results screen
-- Functional settings for music/SFX volume, screen shake, reduced flash, and live background-art changes from either Settings or the fight pause menu
+- Functional settings for music/SFX volume, screen shake, reduced flash, and four live Fight Themes selectable from Main Menu Settings, the fight pause menu, or Online Play setup
 - Private online rooms created or joined through a readable four-character uppercase alphanumeric room code
 - A clipped, scrollable Online Play panel with mouse-wheel scrolling, a visible scrollbar, and keyboard selection that automatically keeps the active option in view
 - Server-authoritative synchronized fights with adaptive input delay, held-input jitter handling, client rollback, checksums, and correction snapshots
@@ -94,8 +94,8 @@ pnpm dev:server
 ## Online play
 
 1. Start the client and server with `pnpm dev`.
-2. In **Online Play**, cycle to the desired fighter.
-3. The host selects **Create Private Room** and shares the displayed room code.
+2. In **Online Play**, cycle to the desired fighter and Fight Theme.
+3. The host selects **Create Private Room** and shares the displayed room code. The host's theme becomes the shared room theme for both players.
 4. The challenger selects **Join Room Code** and enters that code.
 5. Both clients transition into the same authoritative fight room automatically.
 6. After results, both players can vote for a rematch without creating a new room. Either player may withdraw before both accept.
@@ -136,7 +136,7 @@ Combat rules:
 
 Local Versus and Training freeze completely while paused. An online match cannot pause the authoritative server for one player, so opening its fight menu sends neutral local input while the match continues; the menu clearly warns about this behavior.
 
-Background art can be cycled under **Settings → Background Art** or directly from the fight pause menu. The selection persists across sessions and applies immediately to the current fight.
+Fight Themes can be cycled under **Settings → Fight Theme**, directly from **Pause → Fight Theme**, or from the **Fight Theme** option in Online Play before creating or joining a room. The selection persists across sessions and applies immediately to a paused fight. In online rooms, the host's selection is authoritative so both players see the same theme.
 
 ## Build for production
 
