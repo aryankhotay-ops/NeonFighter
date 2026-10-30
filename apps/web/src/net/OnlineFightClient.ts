@@ -121,8 +121,11 @@ export class OnlineFightClient {
   }
 
   public async join(roomId: string, fighterId: FighterId): Promise<void> {
-    const normalizedRoomId = roomId.trim();
+    const normalizedRoomId = roomId.trim().toUpperCase();
     if (!normalizedRoomId) throw new Error("Enter a room code.");
+    if (!/^[A-Z2-9]{4}$/.test(normalizedRoomId) || /[IO01]/.test(normalizedRoomId)) {
+      throw new Error("Room codes contain exactly four uppercase letters or numbers.");
+    }
     await this.connect("join", fighterId, normalizedRoomId);
   }
 

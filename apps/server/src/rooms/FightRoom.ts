@@ -29,6 +29,7 @@ import {
 import { InputQueue, type PlayerIndex } from "../net/InputQueue";
 import { logError, logInfo, logWarn } from "../logger";
 import { RematchVotes } from "../net/RematchVotes";
+import { generateRoomCode } from "./RoomCode";
 
 interface PlayerSlot {
   readonly index: PlayerIndex;
@@ -40,6 +41,7 @@ interface FightRoomOptions {
 }
 
 const RECONNECT_GRACE_SECONDS = 10;
+const activeRoomCodes = new Set<string>();
 
 export class FightRoom extends Room {
   public override maxClients = 2;
@@ -54,6 +56,10 @@ export class FightRoom extends Room {
   private hasStartedMatch = false;
 
   public override onCreate(options: FightRoomOptions): void {
+    // Colyseus explicitly permits replacing its generated ID during onCreate. Reserve the code
+    // for this process so simultaneous private rooms cannot receive the same four-character ID.
+    this.roomId = generateRoomCode(activeRoomCodes);
+    activeRoomCodes.add(this.roomId);
     this.maxMessagesPerSecond = options.maxMessagesPerSecond ?? 180;
     logInfo("room.created", { roomId: this.roomId, roomType: FIGHT_ROOM_NAME });
     this.onMessage<PlayerInputMessage>(FIGHT_MESSAGE.input, (client, message) => {
@@ -151,6 +157,7 @@ export class FightRoom extends Room {
   }
 
   public override onDispose(): void {
+    activeRoomCodes.delete(this.roomId);
     logInfo("room.disposed", { roomId: this.roomId, matchNumber: this.matchNumber });
   }
 

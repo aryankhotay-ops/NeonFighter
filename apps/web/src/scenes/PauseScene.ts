@@ -3,7 +3,13 @@ import type { MatchSetup } from "../game/GameFlow";
 import { pauseDestination, shouldPauseSimulation } from "../game/PausePolicy";
 import type { OnlineFightClient } from "../net/OnlineFightClient";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
-import { loadSettings, saveSettings, type GameSettings } from "../settings/GameSettings";
+import {
+  loadSettings,
+  nextStageArt,
+  saveSettings,
+  stageArtLabel,
+  type GameSettings,
+} from "../settings/GameSettings";
 import { ArcadeMenu, type MenuItem } from "../ui/ArcadeUi";
 import type { FightScene } from "./FightScene";
 
@@ -77,12 +83,12 @@ export class PauseScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(2);
 
-    this.menu = new ArcadeMenu(this, this.createMenuItems(), 390, 181, 500);
+    this.menu = new ArcadeMenu(this, this.createMenuItems(), 390, 165, 500);
 
     this.add
       .text(
         640,
-        595,
+        635,
         "CONTROLS  P1: WASD + F/G/H   ·   P2: ARROWS + J/K/L\nF / J GUARD   ·   GUARD + DOWN BLOCKS LOW   ·   TAP TOWARD / DOWN TO PARRY",
         {
           align: "center",
@@ -139,6 +145,14 @@ export class PauseScene extends Phaser.Scene {
         detail: this.settings.reducedFlash ? "ON" : "OFF",
         onSelect: () => {
           this.settings.reducedFlash = !this.settings.reducedFlash;
+          this.commitAndRefresh();
+        },
+      },
+      {
+        label: "Background Art",
+        detail: stageArtLabel(this.settings.stageArt),
+        onSelect: () => {
+          this.settings.stageArt = nextStageArt(this.settings.stageArt);
           this.commitAndRefresh();
         },
       },

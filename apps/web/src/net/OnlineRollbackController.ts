@@ -16,6 +16,7 @@ export interface ReconciliationStats {
 
 const HISTORY_FRAMES = 180;
 const MAX_EXTRA_CATCH_UP_FRAMES = 2;
+const MAX_SNAPSHOT_CATCH_UP_GAP = 6;
 
 /**
  * Runs input-delay prediction locally, then rolls back when canonical server inputs disagree.
@@ -67,7 +68,7 @@ export class OnlineRollbackController {
     // A browser that briefly renders below 60 Hz can fall behind the authoritative room even
     // while its socket remains healthy. Advance up to two additional canonical/predicted frames
     // per simulation tick until it is nearly caught up; the bound prevents a long stall after a
-    // background-tab pause. Without this, each ten-frame snapshot repeatedly jumped slow clients
+    // background-tab pause. Without this, periodic snapshots repeatedly jumped slow clients
     // forward, which looked like severe online stutter.
     const framesBehind = Math.max(0, this.latestServerFrame - currentFrame - 1);
     const framesToAdvance = 1 + Math.min(MAX_EXTRA_CATCH_UP_FRAMES, framesBehind);
@@ -148,6 +149,9 @@ export class OnlineRollbackController {
     const currentFrame = this.simulation.state.frame;
 
     if (message.frame > currentFrame) {
+      // Small leads are normal network timing, not corruption. Let bounded catch-up consume the
+      // canonical frame stream instead of snapping the whole scene forward on every snapshot.
+      if (message.frame - currentFrame <= MAX_SNAPSHOT_CATCH_UP_GAP) return;
       this.simulation.restore(message.state);
       this.resetHistoryAt(message.frame);
       this.snapshotCorrectionCount += 1;

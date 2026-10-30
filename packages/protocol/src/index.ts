@@ -6,7 +6,9 @@ export const FIGHT_ROOM_NAME = "fight";
 export const NETWORK_TICK_RATE = 60;
 export const BASE_INPUT_DELAY_FRAMES = 2;
 export const MAX_INPUT_DELAY_FRAMES = 6;
-export const SNAPSHOT_INTERVAL_FRAMES = 10;
+// Canonical inputs arrive every frame; three trusted state snapshots per second are enough for
+// divergence recovery without spending bandwidth cloning and sending full state at 6 Hz.
+export const SNAPSHOT_INTERVAL_FRAMES = 20;
 export const INPUT_FUTURE_WINDOW_FRAMES = 20;
 export const INPUT_PAST_WINDOW_FRAMES = 3;
 

@@ -27,7 +27,7 @@ import { FighterView } from "../presentation/FighterView";
 import { getFighterPresentation } from "../presentation/FighterPresentationConfig";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
 import { StageView } from "../presentation/StageView";
-import { loadSettings, type GameSettings } from "../settings/GameSettings";
+import { loadSettings, stageArtLabel, type GameSettings } from "../settings/GameSettings";
 
 interface FightSceneData extends Partial<MatchSetup> {
   readonly onlineClient?: OnlineFightClient;
@@ -51,6 +51,7 @@ export class FightScene extends Phaser.Scene {
   private hudBaseLayer!: Phaser.GameObjects.Graphics;
   private hudValueLayer!: Phaser.GameObjects.Graphics;
   private statusText!: Phaser.GameObjects.Text;
+  private stageTitleText!: Phaser.GameObjects.Text;
   private timerText!: Phaser.GameObjects.Text;
   private announcementText!: Phaser.GameObjects.Text;
   private p1StateText!: Phaser.GameObjects.Text;
@@ -95,7 +96,7 @@ export class FightScene extends Phaser.Scene {
     const keyboard = this.input.keyboard;
     if (!keyboard) throw new Error("Keyboard input is unavailable.");
     this.pauseKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    this.stageView = new StageView(this);
+    this.stageView = new StageView(this, this.settings.stageArt);
     this.fighterLayer = this.add.graphics().setDepth(2);
     this.effectLayer = this.add.graphics().setDepth(3);
     this.hudBaseLayer = this.add.graphics().setDepth(4);
@@ -113,8 +114,8 @@ export class FightScene extends Phaser.Scene {
       })
       .setDepth(6);
 
-    this.add
-      .text(46, 58, "NEON TRANSIT DECK · ORIGINAL COMBAT PRESENTATION", {
+    this.stageTitleText = this.add
+      .text(46, 58, `${stageArtLabel(this.settings.stageArt)} · ORIGINAL COMBAT PRESENTATION`, {
         color: "#79eaff",
         fontFamily: "monospace",
         fontSize: "11px",
@@ -496,6 +497,10 @@ export class FightScene extends Phaser.Scene {
 
   public refreshFightSettings(): void {
     this.settings = loadSettings();
+    this.stageView.setStageArt(this.settings.stageArt);
+    this.stageTitleText.setText(
+      `${stageArtLabel(this.settings.stageArt)} · ORIGINAL COMBAT PRESENTATION`,
+    );
     this.audio.unlock();
   }
 

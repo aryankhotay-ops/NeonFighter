@@ -10,7 +10,7 @@ See the complete milestone sequence in [Plan.md](Plan.md) and the sourced mechan
 
 The first combat slice includes:
 
-- An original neon transit arena rendered in Phaser
+- Four selectable animated arenas rendered in Phaser: Neon Transit, Storm Rooftop, Reactor Ring, and Midnight Harbor
 - Four local original fighters with distinct silhouettes, movement, health, normals, specials, and Super Arts
 - Reusable per-fighter combat configurations under `packages/simulation/src/fighters/`
 - Replaceable temporary vector sprites configured separately from combat data
@@ -36,8 +36,8 @@ The first combat slice includes:
 - Per-player lock indicators plus a final matchup review showing both selections before the match starts
 - Explicit cancellation: undo the final Player 2 choice, undo Player 1's lock, or return to the main menu
 - A dedicated post-match results screen
-- Functional settings for music/SFX volume, screen shake, and reduced flash
-- Private online rooms created or joined through a shareable room code
+- Functional settings for music/SFX volume, screen shake, reduced flash, and live background-art changes from either Settings or the fight pause menu
+- Private online rooms created or joined through a readable four-character uppercase alphanumeric room code
 - A clipped, scrollable Online Play panel with mouse-wheel scrolling, a visible scrollbar, and keyboard selection that automatically keeps the active option in view
 - Server-authoritative synchronized fights with adaptive input delay, held-input jitter handling, client rollback, checksums, and correction snapshots
 - A 10-second reconnection grace period and live RTT/jitter/rollback diagnostics
@@ -100,7 +100,7 @@ pnpm dev:server
 5. Both clients transition into the same authoritative fight room automatically.
 6. After results, both players can vote for a rematch without creating a new room. Either player may withdraw before both accept.
 
-The first networking slice uses Colyseus WebSockets and the shared 60 Hz simulation. Clients send only frame-numbered inputs. The server validates and simulates them, holds the last input through short jitter gaps, broadcasts canonical inputs, and sends correction snapshots every ten frames. Clients apply adaptive 2–6 frame input delay and roll back/replay when prediction differs. The future-input scheduler can reduce its lead again after a latency spike instead of remaining stuck at the previous maximum. Bounded catch-up stepping prevents a temporarily slow-rendering browser from staying behind the room, and remote-fighter presentation smooths short rollback corrections without delaying the local fighter. There are no accounts, ranked matchmaking, or databases.
+The first networking slice uses Colyseus WebSockets and the shared 60 Hz simulation. Clients send only frame-numbered inputs. The server validates and simulates them, holds the last input through short jitter gaps, broadcasts canonical inputs, and sends correction snapshots every twenty frames. Clients apply adaptive 2–6 frame input delay and roll back/replay when prediction differs. The future-input scheduler can reduce its lead again after a latency spike instead of remaining stuck at the previous maximum. Bounded catch-up stepping absorbs small server leads instead of hard-snapping to each ahead snapshot, and remote-fighter presentation smooths short rollback corrections without delaying the local fighter. Animated stage art updates at 30 Hz to leave more render budget for networking and combat. There are no accounts, ranked matchmaking, or databases.
 
 Unexpected disconnects pause the room and reserve the player's seat for 10 seconds. Automatic reconnect restores the latest server snapshot. The reconnection token is also stored in session storage, so **Recover Previous Room** can restore a room after a quick page refresh. Recovery is intentionally in-memory: restarting the Node.js process disposes active rooms.
 
@@ -135,6 +135,8 @@ Combat rules:
 - Super costs 500 of the 1,000-point meter.
 
 Local Versus and Training freeze completely while paused. An online match cannot pause the authoritative server for one player, so opening its fight menu sends neutral local input while the match continues; the menu clearly warns about this behavior.
+
+Background art can be cycled under **Settings → Background Art** or directly from the fight pause menu. The selection persists across sessions and applies immediately to the current fight.
 
 ## Build for production
 

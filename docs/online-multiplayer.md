@@ -2,7 +2,7 @@
 
 ## Implemented slice
 
-Neon Rivals uses ephemeral two-player Colyseus rooms. The host creates a `fight` room and shares its nine-character room ID; the challenger joins that exact ID. Join options contain only protocol version and selected fighter. No account, profile, ranking, matchmaking database, or persistent room state is involved.
+Neon Rivals uses ephemeral two-player Colyseus rooms. The host creates a `fight` room and shares its four-character uppercase alphanumeric room code; the challenger joins that exact code. Ambiguous `I`, `O`, `0`, and `1` glyphs are excluded, and active codes are reserved so one server process cannot issue a duplicate. Join options contain only protocol version and selected fighter. No account, profile, ranking, matchmaking database, or persistent room state is involved.
 
 ## Authoritative flow
 
@@ -13,14 +13,14 @@ Neon Rivals uses ephemeral two-player Colyseus rooms. The host creates a `fight`
 5. A Colyseus fixed timestep advances the shared simulation at 60 Hz.
 6. If an input is missing, the server holds that player's last input and marks the canonical frame as predicted instead of stalling both players.
 7. Every authoritative frame broadcasts the exact input pair and state checksum.
-8. Every ten frames the server broadcasts a trusted correction snapshot.
+8. Every twenty frames the server broadcasts a trusted correction snapshot.
 9. Match results therefore come from the same server-owned simulation, not client position or damage claims.
 
 ## Latency handling
 
 The browser estimates round-trip time and jitter once per second. It derives an adaptive input delay between 2 and 6 frames from half-RTT plus a 0.75-jitter safety margin. Low-latency matches stay at the minimum; unstable connections add a bounded buffer. When a temporary spike subsides, the client replaces its still-future scheduled inputs so the lead returns to the lower value; the previous scheduler could increase delay but never reduce it, leaving the rest of a match stuck at the peak.
 
-Each client predicts remote input by holding the previous value. It records 180 frames of states and applied inputs. When canonical inputs differ, it restores the state before the earliest changed frame and deterministically replays to the present. Periodic server snapshots correct any remaining checksum divergence or fast-forward a client that fell behind. A client that is still behind uses at most two extra simulation steps per local tick until it is near the authoritative frame, avoiding repeated snapshot jumps without allowing an unbounded catch-up stall. Presentation smoothing is applied only to the remote fighter, reducing visible correction judder while the local fighter remains immediate.
+Each client predicts remote input by holding the previous value. It records 180 frames of states and applied inputs. When canonical inputs differ, it restores the state before the earliest changed frame and deterministically replays to the present. Trusted snapshots are sent at 3 Hz instead of 6 Hz; a snapshot up to six frames ahead is absorbed by bounded catch-up rather than hard-snapping the scene, while larger gaps still fast-forward from the trusted state. A client that is behind uses at most two extra simulation steps per local tick until it is near the authoritative frame, avoiding repeated snapshot jumps without allowing an unbounded catch-up stall. Presentation smoothing is applied only to the remote fighter, reducing visible correction judder while the local fighter remains immediate. Animated background motion renders at 30 Hz while simulation and input remain at 60 Hz.
 
 The fight HUD reports RTT, jitter, current delay, rollback count, and snapshot correction count.
 

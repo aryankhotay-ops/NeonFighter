@@ -1,6 +1,12 @@
 import Phaser from "phaser";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
-import { loadSettings, saveSettings, type GameSettings } from "../settings/GameSettings";
+import {
+  loadSettings,
+  nextStageArt,
+  saveSettings,
+  stageArtLabel,
+  type GameSettings,
+} from "../settings/GameSettings";
 import { ArcadeMenu, drawArcadeBackdrop, type MenuItem } from "../ui/ArcadeUi";
 
 export class SettingsScene extends Phaser.Scene {
@@ -70,9 +76,17 @@ export class SettingsScene extends Phaser.Scene {
           this.commit();
         },
       },
+      {
+        label: "Background Art",
+        detail: stageArtLabel(this.settings.stageArt),
+        onSelect: () => {
+          this.settings.stageArt = nextStageArt(this.settings.stageArt);
+          this.commit();
+        },
+      },
       { label: "Back", detail: "SAVE & RETURN", onSelect: () => this.scene.start("main-menu") },
     ];
-    this.menu = new ArcadeMenu(this, items, 390, 245, 500);
+    this.menu = new ArcadeMenu(this, items, 390, 220, 500);
   }
 
   private commit(): void {

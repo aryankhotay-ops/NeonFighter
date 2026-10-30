@@ -167,4 +167,29 @@ describe("online rollback reconciliation", () => {
     expect(simulation.state.frame).toBe(3);
     rollback.dispose();
   });
+
+  it("does not hard-snap for a small ahead snapshot that bounded catch-up can absorb", () => {
+    const initial = fightingState();
+    const simulation = new Simulation(initial);
+    const network = new FakeNetwork();
+    const rollback = new OnlineRollbackController(
+      simulation,
+      network as unknown as OnlineFightClient,
+      0,
+      initial,
+    );
+    const ahead = cloneGameState(initial);
+    ahead.frame = 4;
+
+    network.emitSnapshot({
+      frame: ahead.frame,
+      state: ahead,
+      checksum: checksumState(ahead),
+      serverTime: 0,
+    });
+
+    expect(simulation.state.frame).toBe(0);
+    expect(rollback.stats.snapshotCorrections).toBe(0);
+    rollback.dispose();
+  });
 });
