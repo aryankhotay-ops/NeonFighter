@@ -2,7 +2,7 @@
 
 Neon Rivals is an original browser-based 2D fighting game under incremental development. Its deterministic TypeScript simulation is shared by a Phaser 3 browser client and a Node.js server shell. It does **not** use Street Fighter characters, names, stages, source code, audio, exact frame data, or artwork.
 
-**Play it:** https://aryankhotay-ops.github.io/NeonFighter/ — a permanent GitHub Pages link, rebuilt and redeployed automatically by [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) on every push to `main`. Local Versus, Training, and all menus work there; Online Play additionally needs a permanently hosted multiplayer server (see [Production deployment](#production-deployment) and the `VITE_SERVER_URL` repository variable).
+**Play it:** https://aryankhotay-ops.github.io/NeonFighter/ — a permanent GitHub Pages link, rebuilt and redeployed automatically by [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) on every push to `main`. Local Versus, Training, and all menus work there; Online Play additionally needs a permanently hosted multiplayer server (see [Build for production](#build-for-production) and the `VITE_SERVER_URL` repository variable).
 
 See the complete milestone sequence in [Plan.md](Plan.md) and the sourced mechanics research in [docs/combat-design-references.md](docs/combat-design-references.md).
 
