@@ -20,6 +20,8 @@ export class MatchResultsScene extends Phaser.Scene {
   private result: MatchResultData = {
     mode: "local",
     fighters: ["vesper", "nova"],
+    opponent: "human",
+    cpuDifficulty: "medium",
     winner: -1,
     scores: [0, 0],
     roundsPlayed: 0,
@@ -144,12 +146,19 @@ export class MatchResultsScene extends Phaser.Scene {
           this.scene.start("fight", {
             mode: this.result.mode,
             fighters: this.result.fighters,
+            opponent: this.result.opponent,
+            cpuDifficulty: this.result.cpuDifficulty,
           }),
       },
       {
         label: "Character Select",
         detail: "NEW MATCHUP",
-        onSelect: () => this.scene.start("character-select", { mode: this.result.mode }),
+        onSelect: () =>
+          this.scene.start("character-select", {
+            mode: this.result.mode,
+            opponent: this.result.opponent,
+            cpuDifficulty: this.result.cpuDifficulty,
+          }),
       },
       {
         label: "Main Menu",

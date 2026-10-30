@@ -6,7 +6,12 @@ import {
 } from "@neon-rivals/simulation";
 import Phaser from "phaser";
 import { CharacterSelectController } from "../game/CharacterSelectController";
-import type { MatchMode } from "../game/GameFlow";
+import {
+  cpuDifficultyLabel,
+  type CpuDifficulty,
+  type MatchMode,
+  type OpponentType,
+} from "../game/GameFlow";
 import {
   getFighterPresentation,
   type FighterPresentation,
@@ -16,10 +21,14 @@ import { drawArcadeBackdrop } from "../ui/ArcadeUi";
 
 interface CharacterSelectData {
   readonly mode?: MatchMode;
+  readonly opponent?: OpponentType;
+  readonly cpuDifficulty?: CpuDifficulty;
 }
 
 export class CharacterSelectScene extends Phaser.Scene {
   private mode: MatchMode = "local";
+  private opponent: OpponentType = "human";
+  private cpuDifficulty: CpuDifficulty = "medium";
   private selection!: CharacterSelectController;
   private cards: Phaser.GameObjects.Container[] = [];
   private lockLabels: Phaser.GameObjects.Text[] = [];
@@ -42,6 +51,8 @@ export class CharacterSelectScene extends Phaser.Scene {
 
   public init(data: CharacterSelectData): void {
     this.mode = data.mode ?? "local";
+    this.opponent = data.opponent ?? "human";
+    this.cpuDifficulty = data.cpuDifficulty ?? "medium";
     this.selection = new CharacterSelectController(this.mode, FIGHTER_IDS);
     this.cursorIndex = 0;
     this.cards = [];
@@ -266,7 +277,12 @@ export class CharacterSelectScene extends Phaser.Scene {
   private startConfirmedMatch(): void {
     const fighters = this.selection.confirmedMatchup();
     if (!fighters) return;
-    this.scene.start("fight", { mode: this.mode, fighters });
+    this.scene.start("fight", {
+      mode: this.mode,
+      fighters,
+      opponent: this.opponent,
+      cpuDifficulty: this.cpuDifficulty,
+    });
   }
 
   private renderSelection(): void {
@@ -280,7 +296,9 @@ export class CharacterSelectScene extends Phaser.Scene {
       const isCursor = index === this.cursorIndex && snapshot.phase !== "ready";
       const selectedBy: string[] = [];
       if (snapshot.choices[0] === fighter.id) selectedBy.push("P1");
-      if (snapshot.choices[1] === fighter.id) selectedBy.push("P2");
+      if (snapshot.choices[1] === fighter.id) {
+        selectedBy.push(this.opponent === "cpu" ? "CPU" : "P2");
+      }
       const isLocked = selectedBy.length > 0;
       panel.setStrokeStyle(
         isCursor ? 8 : isLocked ? 6 : 4,
@@ -298,16 +316,16 @@ export class CharacterSelectScene extends Phaser.Scene {
       this.instruction.setText("MATCHUP CONFIRMED");
       this.controlsText.setText(
         this.mode === "training"
-          ? "ENTER BEGIN TRAINING · ESC CHANGE PLAYER 2"
-          : "ENTER BEGIN MATCH · ESC CHANGE PLAYER 2",
+          ? `ENTER BEGIN TRAINING · ESC CHANGE ${this.opponent === "cpu" ? "CPU" : "PLAYER 2"}`
+          : `ENTER BEGIN MATCH · ESC CHANGE ${this.opponent === "cpu" ? "CPU" : "PLAYER 2"}`,
       );
     } else {
       this.matchupPanel.setVisible(false);
       const player = snapshot.activePlayer ?? 0;
       this.instruction.setText(
         this.mode === "training"
-          ? `TRAINING PLAYER ${player + 1} · ${highlighted?.name.toUpperCase() ?? "CHOOSE"} · ENTER TO LOCK`
-          : `PLAYER ${player + 1} · ${highlighted?.name.toUpperCase() ?? "CHOOSE"} · ENTER TO LOCK`,
+          ? `${player === 1 && this.opponent === "cpu" ? `CPU ${cpuDifficultyLabel(this.cpuDifficulty)}` : `TRAINING PLAYER ${player + 1}`} · ${highlighted?.name.toUpperCase() ?? "CHOOSE"} · ENTER TO LOCK`
+          : `${player === 1 && this.opponent === "cpu" ? `CPU ${cpuDifficultyLabel(this.cpuDifficulty)}` : `PLAYER ${player + 1}`} · ${highlighted?.name.toUpperCase() ?? "CHOOSE"} · ENTER TO LOCK`,
       );
       this.controlsText.setText("ARROWS SELECT · ENTER CONFIRM · ESC CANCEL / BACK");
     }
@@ -327,7 +345,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       .setColor(`#${firstPresentation.primary.toString(16).padStart(6, "0")}`);
     this.p2Summary
       .setText(
-        `P2  ${second.name.toUpperCase()}\n${second.fightingStyle}\nSUPER  ${second.moves.super.label}`,
+        `${this.opponent === "cpu" ? `CPU ${cpuDifficultyLabel(this.cpuDifficulty)}` : "P2"}  ${second.name.toUpperCase()}\n${second.fightingStyle}\nSUPER  ${second.moves.super.label}`,
       )
       .setColor(`#${secondPresentation.primary.toString(16).padStart(6, "0")}`);
     this.matchupPanel.setVisible(true);

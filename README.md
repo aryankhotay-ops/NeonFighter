@@ -27,11 +27,12 @@ The first combat slice includes:
 - Knockdown, quick rise, and super knockdown without quick rise
 - Health, meter, 99-second rounds, KO/time-over, best-of-three score, match result, and rematch
 - Retro arcade main menu with Local Versus, Online Play, Training, Controls, Settings, and Credits
+- Local Versus and Training each support either two players on one keyboard or a computer-controlled Player 2 at Easy, Medium, or Hard difficulty
+- Deterministic CPU behavior with level-specific reaction time, spacing, aggression, blocking, parrying, move selection, and meter use—without hidden health or damage bonuses
 - A lightweight original Circuit Marshal animation that aims a laser at the hovered/selected menu option and switches to a two-handed, muzzle-on aim straight at the viewer (sights under the visor, laser flaring into the camera) on Exit Game
 - A visible fight pause/menu button plus Esc shortcut, with resume, live audio/effect settings, controls, and exit actions
 - Smooth rendering for every menu and gameplay scene, with high-DPI text, antialiased WebGL output, aligned pointer input, and no scanline overlay
-- Two-player character selection showing every fighter's name, temporary portrait, fighting style, and Super Art
-- Training selection requires explicit Player 1 and Player 2 choices; the right-side fighter is never auto-selected
+- Character selection showing every fighter's name, temporary portrait, fighting style, and Super Art; the user explicitly chooses both their fighter and the human/CPU opponent's fighter
 - Per-player lock indicators plus a final matchup review showing both selections before the match starts
 - Explicit cancellation: undo the final Player 2 choice, undo Player 1's lock, or return to the main menu
 - A dedicated post-match results screen

@@ -10,7 +10,13 @@ import {
 import { createDeterminismFixture, runReplay } from "@neon-rivals/test-tools";
 import Phaser from "phaser";
 import { AudioManager } from "../audio/AudioManager";
-import { DEFAULT_MATCH_SETUP, normalizeMatchSetup, type MatchSetup } from "../game/GameFlow";
+import { CpuController } from "../game/CpuController";
+import {
+  DEFAULT_MATCH_SETUP,
+  cpuDifficultyLabel,
+  normalizeMatchSetup,
+  type MatchSetup,
+} from "../game/GameFlow";
 import { shouldPauseSimulation } from "../game/PausePolicy";
 import { InputSource } from "../input/InputSource";
 import type { OnlineFightClient } from "../net/OnlineFightClient";
@@ -35,6 +41,7 @@ export class FightScene extends Phaser.Scene {
   private matchSetup: MatchSetup = DEFAULT_MATCH_SETUP;
   private onlineClient: OnlineFightClient | null = null;
   private rollback: OnlineRollbackController | null = null;
+  private cpuController: CpuController | null = null;
   private readonly onlineUnsubscribe: Array<() => void> = [];
   private inputSource!: InputSource;
   private stageView!: StageView;
@@ -62,6 +69,10 @@ export class FightScene extends Phaser.Scene {
     this.matchSetup = normalizeMatchSetup(data);
     this.onlineClient = data.onlineClient ?? null;
     this.rollback = null;
+    this.cpuController =
+      this.matchSetup.mode !== "online" && this.matchSetup.opponent === "cpu"
+        ? new CpuController(this.matchSetup.cpuDifficulty, 1)
+        : null;
     this.onlineUnsubscribe.length = 0;
     this.simulation.resetMatch(this.matchSetup.fighters);
     this.effects.reset();
@@ -138,12 +149,19 @@ export class FightScene extends Phaser.Scene {
       .setDepth(6);
 
     this.add
-      .text(1246, 676, "P2  ARROWS · J LIGHT · K HEAVY · L SPECIAL · K+L SUPER", {
-        align: "right",
-        color: "#b9c5d8",
-        fontFamily: "monospace",
-        fontSize: "13px",
-      })
+      .text(
+        1246,
+        676,
+        this.cpuController
+          ? `CPU ${cpuDifficultyLabel(this.matchSetup.cpuDifficulty)} · COMPUTER CONTROLLED`
+          : "P2  ARROWS · J LIGHT · K HEAVY · L SPECIAL · K+L SUPER",
+        {
+          align: "right",
+          color: "#b9c5d8",
+          fontFamily: "monospace",
+          fontSize: "13px",
+        },
+      )
       .setOrigin(1, 0)
       .setDepth(6);
 
@@ -263,7 +281,14 @@ export class FightScene extends Phaser.Scene {
         this.rollback.advance(this.pauseMenuOpen ? 0 : this.inputSource.captureButtons(0));
       } else {
         const frame = this.simulation.state.frame;
-        this.simulation.step(this.inputSource.capture(frame));
+        const localInput = this.inputSource.capture(frame);
+        const secondPlayerButtons = this.cpuController
+          ? this.cpuController.capture(this.simulation.state)
+          : localInput.players[1];
+        this.simulation.step({
+          frame,
+          players: [localInput.players[0], secondPlayerButtons],
+        });
       }
       this.accumulatorMs -= SIMULATION_STEP_MS;
     }

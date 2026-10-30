@@ -13,6 +13,7 @@ import { FightScene } from "./scenes/FightScene";
 import { MainMenuScene } from "./scenes/MainMenuScene";
 import { MatchResultsScene } from "./scenes/MatchResultsScene";
 import { OnlineLobbyScene } from "./scenes/OnlineLobbyScene";
+import { OpponentSelectScene } from "./scenes/OpponentSelectScene";
 import { PauseScene } from "./scenes/PauseScene";
 import { SettingsScene } from "./scenes/SettingsScene";
 import "./style.css";
@@ -31,6 +32,7 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [
     BootScene,
     MainMenuScene,
+    OpponentSelectScene,
     CharacterSelectScene,
     OnlineLobbyScene,
     ControlsScene,

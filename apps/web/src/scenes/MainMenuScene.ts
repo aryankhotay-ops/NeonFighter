@@ -42,8 +42,8 @@ export class MainMenuScene extends Phaser.Scene {
       [
         {
           label: "Local Versus",
-          detail: "2 PLAYERS",
-          onSelect: () => this.scene.start("character-select", { mode: "local" }),
+          detail: "2P / CPU",
+          onSelect: () => this.scene.start("opponent-select", { mode: "local" }),
         },
         {
           label: "Online Play",
@@ -52,8 +52,8 @@ export class MainMenuScene extends Phaser.Scene {
         },
         {
           label: "Training",
-          detail: "COMBAT LAB",
-          onSelect: () => this.scene.start("character-select", { mode: "training" }),
+          detail: "2P / CPU LAB",
+          onSelect: () => this.scene.start("opponent-select", { mode: "training" }),
         },
         {
           label: "Controls",
