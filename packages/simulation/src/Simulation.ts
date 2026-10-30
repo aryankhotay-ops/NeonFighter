@@ -359,7 +359,7 @@ export class Simulation {
       return;
     }
 
-    if (this.didBlock(defender, attacker, attack, defenderButtons)) {
+    if (this.didBlock(defender, attack, defenderButtons)) {
       attacker.attackConnected = true;
       defender.health = Math.max(0, defender.health - attack.chipDamage);
       defender.stunFrames = attack.blockstunFrames;
@@ -387,17 +387,11 @@ export class Simulation {
     return attack.height === "low" ? defender.parryLowFrames > 0 : defender.parryHighFrames > 0;
   }
 
-  private didBlock(
-    defender: FighterState,
-    attacker: FighterState,
-    attack: AttackDefinition,
-    buttons: number,
-  ): boolean {
+  private didBlock(defender: FighterState, attack: AttackDefinition, buttons: number): boolean {
     if (!defender.grounded || !this.canDefend(defender)) return false;
-    const awayButton = attacker.x < defender.x ? InputButton.Right : InputButton.Left;
-    const holdingAway = hasInput(buttons, awayButton);
+    const holdingGuard = hasInput(buttons, InputButton.Guard);
     const holdingDown = hasInput(buttons, InputButton.Down);
-    if (!holdingAway) return false;
+    if (!holdingGuard) return false;
     if (attack.height === "low") return holdingDown;
     if (attack.height === "overhead") return !holdingDown;
     return true;

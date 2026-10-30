@@ -83,7 +83,7 @@ export class PauseScene extends Phaser.Scene {
       .text(
         640,
         595,
-        "CONTROLS  P1: WASD + F/G/H   ·   P2: ARROWS + J/K/L\nHOLD AWAY TO BLOCK   ·   TAP TOWARD / DOWN TO PARRY",
+        "CONTROLS  P1: WASD + F/G/H   ·   P2: ARROWS + J/K/L\nF / J GUARD   ·   GUARD + DOWN BLOCKS LOW   ·   TAP TOWARD / DOWN TO PARRY",
         {
           align: "center",
           color: "#91a1b8",

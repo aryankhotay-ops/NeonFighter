@@ -23,8 +23,8 @@ export class ControlsScene extends Phaser.Scene {
       .setDepth(3);
 
     const rows = [
-      ["MOVE / BLOCK / PARRY", "W A S D", "ARROW KEYS"],
-      ["LIGHT ATTACK", "F", "J"],
+      ["MOVE / PARRY", "W A S D", "ARROW KEYS"],
+      ["GUARD / DEFEND", "F", "J"],
       ["HEAVY ATTACK", "G", "K"],
       ["SPECIAL", "H", "L"],
       ["SUPER ART", "G + H", "K + L"],
@@ -62,11 +62,16 @@ export class ControlsScene extends Phaser.Scene {
     });
 
     this.add
-      .text(640, 578, "HOLD AWAY TO BLOCK · TAP TOWARD FOR HIGH PARRY · TAP DOWN FOR LOW PARRY", {
-        color: "#8fa1bb",
-        fontFamily: "monospace",
-        fontSize: "13px",
-      })
+      .text(
+        640,
+        578,
+        "HOLD GUARD TO BLOCK · GUARD + DOWN BLOCKS LOW · TAP TOWARD / DOWN TO PARRY",
+        {
+          color: "#8fa1bb",
+          fontFamily: "monospace",
+          fontSize: "13px",
+        },
+      )
       .setOrigin(0.5)
       .setDepth(3);
 

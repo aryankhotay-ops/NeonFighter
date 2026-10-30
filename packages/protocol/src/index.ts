@@ -1,10 +1,11 @@
 import type { FighterId, GameState } from "@neon-rivals/simulation";
 
-export const PROTOCOL_VERSION = 2;
+// v3 changes input bit 4 from Light to Guard and moves the internal Light bit to bit 7.
+export const PROTOCOL_VERSION = 3;
 export const FIGHT_ROOM_NAME = "fight";
 export const NETWORK_TICK_RATE = 60;
-export const BASE_INPUT_DELAY_FRAMES = 3;
-export const MAX_INPUT_DELAY_FRAMES = 8;
+export const BASE_INPUT_DELAY_FRAMES = 2;
+export const MAX_INPUT_DELAY_FRAMES = 6;
 export const SNAPSHOT_INTERVAL_FRAMES = 10;
 export const INPUT_FUTURE_WINDOW_FRAMES = 20;
 export const INPUT_PAST_WINDOW_FRAMES = 3;

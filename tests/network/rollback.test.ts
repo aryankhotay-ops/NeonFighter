@@ -115,4 +115,56 @@ describe("online rollback reconciliation", () => {
     expect(rollback.stats.snapshotCorrections).toBe(1);
     rollback.dispose();
   });
+
+  it("reduces scheduled input lead again after a latency spike subsides", () => {
+    const initial = fightingState();
+    const simulation = new Simulation(initial);
+    const network = new FakeNetwork();
+    network.latency.inputDelayFrames = 6;
+    const rollback = new OnlineRollbackController(
+      simulation,
+      network as unknown as OnlineFightClient,
+      0,
+      initial,
+    );
+
+    rollback.advance(0);
+    rollback.advance(0);
+    expect(network.sent.slice(0, 2).map((message) => message.frame)).toEqual([6, 7]);
+
+    network.latency.inputDelayFrames = 2;
+    rollback.advance(InputButton.Right);
+    const correctedFuture = network.sent.slice(2);
+    expect(correctedFuture.map((message) => message.frame)).toEqual([4, 5, 6, 7]);
+    expect(correctedFuture.every((message) => message.buttons === InputButton.Right)).toBe(true);
+
+    rollback.dispose();
+  });
+
+  it("uses bounded extra steps to catch a slow-rendering client up to the server", () => {
+    const initial = fightingState();
+    const simulation = new Simulation(initial);
+    const network = new FakeNetwork();
+    const rollback = new OnlineRollbackController(
+      simulation,
+      network as unknown as OnlineFightClient,
+      0,
+      initial,
+    );
+
+    for (let frame = 0; frame < 6; frame += 1) {
+      network.emitFrame({
+        frame,
+        inputs: [0, 0],
+        predictedMask: 0,
+        checksum: 0,
+        serverTime: 0,
+      });
+    }
+    rollback.advance(0);
+
+    // One normal step plus the bounded two-frame catch-up; never an unbounded replay burst.
+    expect(simulation.state.frame).toBe(3);
+    rollback.dispose();
+  });
 });

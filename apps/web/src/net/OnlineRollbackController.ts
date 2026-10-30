@@ -15,6 +15,7 @@ export interface ReconciliationStats {
 }
 
 const HISTORY_FRAMES = 180;
+const MAX_EXTRA_CATCH_UP_FRAMES = 2;
 
 /**
  * Runs input-delay prediction locally, then rolls back when canonical server inputs disagree.
@@ -61,12 +62,54 @@ export class OnlineRollbackController {
     const currentFrame = this.simulation.state.frame;
     const schedulingBase = Math.max(currentFrame, this.latestServerFrame);
     const desiredFrame = schedulingBase + this.network.latency.inputDelayFrames;
-    const targetFrame = Math.max(desiredFrame, this.lastScheduledFrame + 1);
-    this.lastScheduledFrame = targetFrame;
-    this.plannedLocal.set(targetFrame, localButtons);
-    this.network.sendInput(targetFrame, localButtons);
-    this.stepFrame(currentFrame);
-    this.prune(currentFrame);
+    this.scheduleLocalInput(desiredFrame, localButtons);
+
+    // A browser that briefly renders below 60 Hz can fall behind the authoritative room even
+    // while its socket remains healthy. Advance up to two additional canonical/predicted frames
+    // per simulation tick until it is nearly caught up; the bound prevents a long stall after a
+    // background-tab pause. Without this, each ten-frame snapshot repeatedly jumped slow clients
+    // forward, which looked like severe online stutter.
+    const framesBehind = Math.max(0, this.latestServerFrame - currentFrame - 1);
+    const framesToAdvance = 1 + Math.min(MAX_EXTRA_CATCH_UP_FRAMES, framesBehind);
+    for (let index = 0; index < framesToAdvance; index += 1) {
+      this.stepFrame(this.simulation.state.frame);
+    }
+    this.prune(this.simulation.state.frame);
+  }
+
+  /**
+   * Keep the server's future queue contiguous while allowing adaptive delay to come back down.
+   * Previously `max(desired, last + 1)` permanently preserved the largest delay ever observed:
+   * one Wi-Fi/tunnel spike could leave the entire match at the old 8-frame maximum. When delay
+   * drops, correcting the still-future range lets both the local prediction and server converge
+   * to the smaller lead over the next few frames.
+   */
+  private scheduleLocalInput(desiredFrame: number, localButtons: number): void {
+    if (this.lastScheduledFrame < 0) {
+      this.plannedLocal.set(desiredFrame, localButtons);
+      this.network.sendInput(desiredFrame, localButtons);
+      this.lastScheduledFrame = desiredFrame;
+      return;
+    }
+
+    if (desiredFrame > this.lastScheduledFrame) {
+      const held = this.plannedLocal.get(this.lastScheduledFrame) ?? 0;
+      for (let frame = this.lastScheduledFrame + 1; frame < desiredFrame; frame += 1) {
+        this.plannedLocal.set(frame, held);
+        this.network.sendInput(frame, held);
+      }
+      this.plannedLocal.set(desiredFrame, localButtons);
+      this.network.sendInput(desiredFrame, localButtons);
+      this.lastScheduledFrame = desiredFrame;
+      return;
+    }
+
+    // Delay decreased. Replace inputs already queued for still-future frames so the lower lead
+    // takes effect instead of remaining stuck at the previous peak for the rest of the match.
+    for (let frame = desiredFrame; frame <= this.lastScheduledFrame; frame += 1) {
+      this.plannedLocal.set(frame, localButtons);
+      this.network.sendInput(frame, localButtons);
+    }
   }
 
   public dispose(): void {

@@ -9,7 +9,8 @@ export interface ConsumedInputs {
 
 export type InputRejection = "invalid-input" | "late-input" | "future-input" | "stale-sequence";
 
-const INPUT_MASK = 0x7f;
+// Eight input bits: directions, Guard, Heavy, Special, plus the internal Light fixture bit.
+const INPUT_MASK = 0xff;
 
 /**
  * Bounded authoritative input buffer. Missing frames hold the last input so jitter does not

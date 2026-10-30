@@ -1,6 +1,8 @@
 import {
   FLOOR_Y,
+  InputButton,
   getFighterDefinition,
+  hasInput,
   isAttackActive,
   toPixels,
   type FighterState,
@@ -17,15 +19,21 @@ interface Pose {
   readonly crouch: number;
 }
 
+export interface FighterRenderPosition {
+  readonly x: number;
+  readonly feetY: number;
+}
+
 export class FighterView {
   public draw(
     graphics: Phaser.GameObjects.Graphics,
     fighter: FighterState,
     presentation: FighterPresentation = getFighterPresentation(fighter.fighterId),
+    renderPosition?: FighterRenderPosition,
   ): void {
     const definition = getFighterDefinition(fighter.fighterId);
-    const x = toPixels(fighter.x);
-    const feetY = toPixels(fighter.y);
+    const x = renderPosition?.x ?? toPixels(fighter.x);
+    const feetY = renderPosition?.feetY ?? toPixels(fighter.y);
     const knockedDown = fighter.action === "knockdown" || fighter.action === "ko";
 
     graphics.fillStyle(0x000000, 0.34);
@@ -182,6 +190,13 @@ export class FighterView {
         rearLeg: 0.17,
         torsoLean: -0.14,
       };
+    } else if (hasInput(fighter.previousButtons, InputButton.Guard)) {
+      pose = {
+        ...pose,
+        frontArm: -1.45,
+        rearArm: -1.0,
+        torsoLean: -0.08,
+      };
     } else if (fighter.action === "parry") {
       pose = { ...pose, frontArm: -1.62, rearArm: 0.2, torsoLean: 0.1 };
     } else if (fighter.action === "hitstun") {
@@ -244,6 +259,13 @@ export class FighterView {
       graphics.fillCircle(x + fighter.facing * 42, centerY, 47);
       graphics.lineStyle(4, 0xbffbff, 0.92);
       graphics.strokeCircle(x + fighter.facing * 42, centerY, 42);
+    } else if (hasInput(fighter.previousButtons, InputButton.Guard)) {
+      graphics.fillStyle(presentation.primary, 0.08);
+      graphics.fillCircle(x + fighter.facing * 38, centerY, 50);
+      graphics.lineStyle(3, presentation.primary, 0.55);
+      graphics.beginPath();
+      graphics.arc(x + fighter.facing * 38, centerY, 44, -1.2, 1.2);
+      graphics.strokePath();
     }
   }
 

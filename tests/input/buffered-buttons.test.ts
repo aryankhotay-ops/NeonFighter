@@ -5,9 +5,9 @@ import { BufferedButtonState } from "../../apps/web/src/input/BufferedButtonStat
 describe("local button latching", () => {
   it("preserves a quick tap until the next simulation sample", () => {
     const buffered = new BufferedButtonState();
-    buffered.queue(0, InputButton.Light);
+    buffered.queue(0, InputButton.Heavy);
 
-    expect(buffered.consume(0, 0)).toBe(InputButton.Light);
+    expect(buffered.consume(0, 0)).toBe(InputButton.Heavy);
     expect(buffered.consume(0, 0)).toBe(0);
   });
 
@@ -21,9 +21,9 @@ describe("local button latching", () => {
   it("keeps both local players independent", () => {
     const buffered = new BufferedButtonState();
     buffered.queue(0, InputButton.Heavy);
-    buffered.queue(1, InputButton.Light);
+    buffered.queue(1, InputButton.Special);
 
     expect(buffered.consume(0, 0)).toBe(InputButton.Heavy);
-    expect(buffered.consume(1, 0)).toBe(InputButton.Light);
+    expect(buffered.consume(1, 0)).toBe(InputButton.Special);
   });
 });

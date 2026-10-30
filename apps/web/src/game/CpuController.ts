@@ -42,14 +42,14 @@ const CPU_TUNING: Readonly<Record<CpuDifficulty, CpuTuning>> = {
     heavyChance: 0.32,
   },
   hard: {
-    reactionFrames: 4,
-    preferredDistancePx: 132,
-    retreatDistancePx: 64,
+    reactionFrames: 2,
+    preferredDistancePx: 80,
+    retreatDistancePx: 28,
     defenseChance: 0.9,
-    idleChance: 0.04,
-    jumpChance: 0.14,
-    specialChance: 0.34,
-    heavyChance: 0.38,
+    idleChance: 0,
+    jumpChance: 0.05,
+    specialChance: 0.1,
+    heavyChance: 0.86,
   },
 };
 
@@ -110,11 +110,15 @@ export class CpuController {
           ? getFighterDefinition(opponent.fighterId).moves[opponent.attack]
           : null;
         const crouch = incoming?.height === "low";
-        // Hard reacts with a timed parry input more often; Easy mostly attempts a late block.
+        // Hard reacts with a timed parry input more often; all levels use the same Guard control
+        // available to the player rather than gaining a hidden defensive advantage.
         if (this.difficulty === "hard" && defenseRoll < tuning.defenseChance * 0.42) {
           return { movement: crouch ? InputButton.Down : toward, action: 0 };
         }
-        return { movement: away | (crouch ? InputButton.Down : 0), action: 0 };
+        return {
+          movement: InputButton.Guard | (crouch ? InputButton.Down : 0),
+          action: 0,
+        };
       }
     }
 
@@ -144,10 +148,7 @@ export class CpuController {
     if (actionRoll > 1 - tuning.jumpChance && edgeDistance > pixels(70)) {
       return { movement: toward | InputButton.Up, action: 0 };
     }
-    if (this.difficulty !== "easy" && actionRoll > 0.7) {
-      return { movement: InputButton.Down, action: InputButton.Light };
-    }
-    return { movement: 0, action: InputButton.Light };
+    return { movement: 0, action: InputButton.Heavy };
   }
 
   private isThreatened(self: FighterState, opponent: FighterState, edgeDistance: number): boolean {

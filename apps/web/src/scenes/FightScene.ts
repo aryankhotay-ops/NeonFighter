@@ -5,6 +5,7 @@ import {
   checksumState,
   formatChecksum,
   getFighterDefinition,
+  toPixels,
   type FighterState,
 } from "@neon-rivals/simulation";
 import { createDeterminismFixture, runReplay } from "@neon-rivals/test-tools";
@@ -60,6 +61,10 @@ export class FightScene extends Phaser.Scene {
   private accumulatorMs = 0;
   private resultsScheduled = false;
   private pauseMenuOpen = false;
+  private renderedFighterPositions: [
+    { x: number; feetY: number } | null,
+    { x: number; feetY: number } | null,
+  ] = [null, null];
 
   public constructor() {
     super("fight");
@@ -80,6 +85,7 @@ export class FightScene extends Phaser.Scene {
     this.accumulatorMs = 0;
     this.resultsScheduled = false;
     this.pauseMenuOpen = false;
+    this.renderedFighterPositions = [null, null];
     this.settings = loadSettings();
   }
 
@@ -141,7 +147,7 @@ export class FightScene extends Phaser.Scene {
     pauseButton.on("pointerdown", () => this.openPauseMenu());
 
     this.add
-      .text(34, 676, "P1  WASD · F LIGHT · G HEAVY · H SPECIAL · G+H SUPER", {
+      .text(34, 676, "P1  WASD · F GUARD · G HEAVY · H SPECIAL · G+H SUPER", {
         color: "#b9c5d8",
         fontFamily: "monospace",
         fontSize: "13px",
@@ -154,7 +160,7 @@ export class FightScene extends Phaser.Scene {
         676,
         this.cpuController
           ? `CPU ${cpuDifficultyLabel(this.matchSetup.cpuDifficulty)} · COMPUTER CONTROLLED`
-          : "P2  ARROWS · J LIGHT · K HEAVY · L SPECIAL · K+L SUPER",
+          : "P2  ARROWS · J GUARD · K HEAVY · L SPECIAL · K+L SUPER",
         {
           align: "right",
           color: "#b9c5d8",
@@ -166,12 +172,17 @@ export class FightScene extends Phaser.Scene {
       .setDepth(6);
 
     this.add
-      .text(640, 638, "HOLD AWAY TO BLOCK · TAP TOWARD / DOWN TO PARRY · ESC MENU", {
-        align: "center",
-        color: "#ffd85a",
-        fontFamily: "monospace",
-        fontSize: "13px",
-      })
+      .text(
+        640,
+        638,
+        "HOLD GUARD TO BLOCK · GUARD + DOWN BLOCKS LOW · TAP TOWARD / DOWN TO PARRY",
+        {
+          align: "center",
+          color: "#ffd85a",
+          fontFamily: "monospace",
+          fontSize: "13px",
+        },
+      )
       .setOrigin(0.5, 0)
       .setDepth(6);
 
@@ -326,8 +337,8 @@ export class FightScene extends Phaser.Scene {
     this.stageView.drawMotion(state.frame);
 
     this.fighterLayer.clear();
-    this.fighterView.draw(this.fighterLayer, state.fighters[0], this.presentationForPlayer(0));
-    this.fighterView.draw(this.fighterLayer, state.fighters[1], this.presentationForPlayer(1));
+    this.drawFighter(0);
+    this.drawFighter(1);
 
     this.effectLayer.clear();
     this.effects.draw(this.effectLayer, state.frame, this.settings.reducedFlash);
@@ -442,6 +453,38 @@ export class FightScene extends Phaser.Scene {
 
   private presentationForPlayer(player: 0 | 1) {
     return getFighterPresentation(this.matchSetup.fighters[player]);
+  }
+
+  /** Smooth only the remote online fighter; the local fighter stays immediate and responsive. */
+  private drawFighter(player: 0 | 1): void {
+    const fighter = this.simulation.state.fighters[player];
+    const target = { x: toPixels(fighter.x), feetY: toPixels(fighter.y) };
+    const localOnlinePlayer = this.onlineClient?.playerIndex;
+    const shouldSmooth =
+      this.rollback !== null && localOnlinePlayer !== null && localOnlinePlayer !== player;
+
+    if (!shouldSmooth) {
+      this.renderedFighterPositions[player] = target;
+      this.fighterView.draw(this.fighterLayer, fighter, this.presentationForPlayer(player), target);
+      return;
+    }
+
+    const previous = this.renderedFighterPositions[player] ?? target;
+    const correctionDistance = Math.hypot(target.x - previous.x, target.feetY - previous.feetY);
+    const renderPosition =
+      correctionDistance > 180
+        ? target
+        : {
+            x: Phaser.Math.Linear(previous.x, target.x, 0.42),
+            feetY: Phaser.Math.Linear(previous.feetY, target.feetY, 0.42),
+          };
+    this.renderedFighterPositions[player] = renderPosition;
+    this.fighterView.draw(
+      this.fighterLayer,
+      fighter,
+      this.presentationForPlayer(player),
+      renderPosition,
+    );
   }
 
   public resumeFromPauseMenu(): void {

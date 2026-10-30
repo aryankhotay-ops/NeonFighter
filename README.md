@@ -22,8 +22,8 @@ The first combat slice includes:
 - Walk, crouch, jump, super jump, double-tap dash, facing, stage bounds, and pushboxes
 - Light, crouching-low, overhead-heavy, special, and super attacks
 - Startup, active, recovery, hitstop, hitstun, blockstun, chip damage, and knockback
-- High/low blocking and timing-based high/low parry
-- Confirmed light → heavy → special → super cancel paths
+- Dedicated held Guard control with standing/crouching defense and timing-based high/low parry
+- Confirmed heavy → special → super cancel paths
 - Knockdown, quick rise, and super knockdown without quick rise
 - Health, meter, 99-second rounds, KO/time-over, best-of-three score, match result, and rematch
 - Retro arcade main menu with Local Versus, Online Play, Training, Controls, Settings, and Credits
@@ -100,7 +100,7 @@ pnpm dev:server
 5. Both clients transition into the same authoritative fight room automatically.
 6. After results, both players can vote for a rematch without creating a new room. Either player may withdraw before both accept.
 
-The first networking slice uses Colyseus WebSockets and the shared 60 Hz simulation. Clients send only frame-numbered inputs. The server validates and simulates them, holds the last input through short jitter gaps, broadcasts canonical inputs, and sends correction snapshots every ten frames. Clients apply adaptive 3–8 frame input delay and roll back/replay when prediction differs. There are no accounts, ranked matchmaking, or databases.
+The first networking slice uses Colyseus WebSockets and the shared 60 Hz simulation. Clients send only frame-numbered inputs. The server validates and simulates them, holds the last input through short jitter gaps, broadcasts canonical inputs, and sends correction snapshots every ten frames. Clients apply adaptive 2–6 frame input delay and roll back/replay when prediction differs. The future-input scheduler can reduce its lead again after a latency spike instead of remaining stuck at the previous maximum. Bounded catch-up stepping prevents a temporarily slow-rendering browser from staying behind the room, and remote-fighter presentation smooths short rollback corrections without delaying the local fighter. There are no accounts, ranked matchmaking, or databases.
 
 Unexpected disconnects pause the room and reserve the player's seat for 10 seconds. Automatic reconnect restores the latest server snapshot. The reconnection token is also stored in session storage, so **Recover Previous Room** can restore a room after a quick page refresh. Recovery is intentionally in-memory: restarting the Node.js process disposes active rooms.
 
@@ -112,20 +112,20 @@ COLYSEUS_LATENCY=120 pnpm dev:server
 
 ## Controls
 
-| Action               | Player 1          | Player 2          |
-| -------------------- | ----------------- | ----------------- |
-| Move / block / parry | W A S D           | Arrow keys        |
-| Light attack         | F                 | J                 |
-| Heavy attack         | G                 | K                 |
-| Special move         | H                 | L                 |
-| Super                | G + H             | K + L             |
-| Menu navigation      | Arrows + Enter    | Arrows + Enter    |
-| Pause / fight menu   | Esc or HUD button | Esc or HUD button |
+| Action             | Player 1          | Player 2          |
+| ------------------ | ----------------- | ----------------- |
+| Move / parry       | W A S D           | Arrow keys        |
+| Guard / defend     | F                 | J                 |
+| Heavy attack       | G                 | K                 |
+| Special move       | H                 | L                 |
+| Super              | G + H             | K + L             |
+| Menu navigation    | Arrows + Enter    | Arrows + Enter    |
+| Pause / fight menu | Esc or HUD button | Esc or HUD button |
 
 Combat rules:
 
-- Hold away to block mids and overhead-capable standing attacks.
-- Hold down-away to block low attacks.
+- Hold Guard to block mids and standing attacks.
+- Hold Guard + down to block low attacks.
 - Tap toward shortly before a mid/overhead impact to parry it.
 - Tap down shortly before a low impact to parry it.
 - Double-tap left or right to dash.

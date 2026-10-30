@@ -47,4 +47,10 @@ describe("authoritative network input queue", () => {
     queue.reset();
     expect(queue.consume(1)).toEqual({ inputs: [0, 0], predictedMask: 0b11 });
   });
+
+  it("accepts the full eight-bit input mask used by Guard-era protocol v3", () => {
+    const queue = new InputQueue();
+    expect(queue.submit(0, input(0, 2, 0x80), 0)).toBeNull();
+    expect(queue.consume(2).inputs[0]).toBe(0x80);
+  });
 });

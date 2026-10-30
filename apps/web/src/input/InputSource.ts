@@ -7,7 +7,7 @@ interface PlayerKeys {
   readonly right: Phaser.Input.Keyboard.Key;
   readonly up: Phaser.Input.Keyboard.Key;
   readonly down: Phaser.Input.Keyboard.Key;
-  readonly light: Phaser.Input.Keyboard.Key;
+  readonly guard: Phaser.Input.Keyboard.Key;
   readonly heavy: Phaser.Input.Keyboard.Key;
   readonly special: Phaser.Input.Keyboard.Key;
 }
@@ -26,7 +26,7 @@ export class InputSource {
         right: Phaser.Input.Keyboard.KeyCodes.D,
         up: Phaser.Input.Keyboard.KeyCodes.W,
         down: Phaser.Input.Keyboard.KeyCodes.S,
-        light: Phaser.Input.Keyboard.KeyCodes.F,
+        guard: Phaser.Input.Keyboard.KeyCodes.F,
         heavy: Phaser.Input.Keyboard.KeyCodes.G,
         special: Phaser.Input.Keyboard.KeyCodes.H,
       }),
@@ -35,7 +35,7 @@ export class InputSource {
         right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
         up: Phaser.Input.Keyboard.KeyCodes.UP,
         down: Phaser.Input.Keyboard.KeyCodes.DOWN,
-        light: Phaser.Input.Keyboard.KeyCodes.J,
+        guard: Phaser.Input.Keyboard.KeyCodes.J,
         heavy: Phaser.Input.Keyboard.KeyCodes.K,
         special: Phaser.Input.Keyboard.KeyCodes.L,
       }),
@@ -65,7 +65,6 @@ export class InputSource {
   private registerBufferedActions(player: LocalPlayerIndex, keys: PlayerKeys): void {
     const actions: ReadonlyArray<readonly [Phaser.Input.Keyboard.Key, InputButton]> = [
       [keys.up, InputButton.Up],
-      [keys.light, InputButton.Light],
       [keys.heavy, InputButton.Heavy],
       [keys.special, InputButton.Special],
     ];
@@ -83,7 +82,7 @@ export class InputSource {
       right: keyboard.addKey(codes.right),
       up: keyboard.addKey(codes.up),
       down: keyboard.addKey(codes.down),
-      light: keyboard.addKey(codes.light),
+      guard: keyboard.addKey(codes.guard),
       heavy: keyboard.addKey(codes.heavy),
       special: keyboard.addKey(codes.special),
     };
@@ -95,7 +94,7 @@ export class InputSource {
     if (keys.right.isDown) buttons |= InputButton.Right;
     if (keys.up.isDown) buttons |= InputButton.Up;
     if (keys.down.isDown) buttons |= InputButton.Down;
-    if (keys.light.isDown) buttons |= InputButton.Light;
+    if (keys.guard.isDown) buttons |= InputButton.Guard;
     if (keys.heavy.isDown) buttons |= InputButton.Heavy;
     if (keys.special.isDown) buttons |= InputButton.Special;
     return buttons;

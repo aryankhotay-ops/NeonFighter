@@ -59,10 +59,10 @@ describe("arcade combat systems", () => {
     expect(simulation.state.lastEvent?.type).toBe("hit");
   });
 
-  it("blocks mids by holding away and applies no normal chip damage", () => {
+  it("blocks mids with the dedicated Guard control and applies no normal chip damage", () => {
     const simulation = readySimulation();
-    step(simulation, InputButton.Light, InputButton.Right);
-    advance(simulation, VESPER_ATTACKS.light.startupFrames, 0, InputButton.Right);
+    step(simulation, InputButton.Light, InputButton.Guard);
+    advance(simulation, VESPER_ATTACKS.light.startupFrames, 0, InputButton.Guard);
 
     expect(simulation.state.fighters[1].health).toBe(MAX_HEALTH);
     expect(simulation.state.fighters[1].action).toBe("blockstun");
@@ -71,23 +71,30 @@ describe("arcade combat systems", () => {
 
   it("requires a crouch block against low attacks", () => {
     const standingBlock = readySimulation();
-    step(standingBlock, InputButton.Down, InputButton.Right);
-    step(standingBlock, InputButton.Down | InputButton.Light, InputButton.Right);
-    advance(standingBlock, VESPER_ATTACKS.crouchLight.startupFrames, 0, InputButton.Right);
+    step(standingBlock, InputButton.Down, InputButton.Guard);
+    step(standingBlock, InputButton.Down | InputButton.Light, InputButton.Guard);
+    advance(standingBlock, VESPER_ATTACKS.crouchLight.startupFrames, 0, InputButton.Guard);
     expect(standingBlock.state.fighters[1].health).toBeLessThan(MAX_HEALTH);
 
     const crouchBlock = readySimulation();
-    advance(crouchBlock, 8, 0, InputButton.Right | InputButton.Down);
-    step(crouchBlock, InputButton.Down, InputButton.Right | InputButton.Down);
-    step(crouchBlock, InputButton.Down | InputButton.Light, InputButton.Right | InputButton.Down);
+    advance(crouchBlock, 8, 0, InputButton.Guard | InputButton.Down);
+    step(crouchBlock, InputButton.Down, InputButton.Guard | InputButton.Down);
+    step(crouchBlock, InputButton.Down | InputButton.Light, InputButton.Guard | InputButton.Down);
     advance(
       crouchBlock,
       VESPER_ATTACKS.crouchLight.startupFrames,
       0,
-      InputButton.Right | InputButton.Down,
+      InputButton.Guard | InputButton.Down,
     );
     expect(crouchBlock.state.fighters[1].health).toBe(MAX_HEALTH);
     expect(crouchBlock.state.lastEvent?.type).toBe("block");
+  });
+
+  it("does not auto-block merely by walking away", () => {
+    const simulation = readySimulation();
+    step(simulation, InputButton.Light, InputButton.Right);
+    advance(simulation, VESPER_ATTACKS.light.startupFrames, 0, InputButton.Right);
+    expect(simulation.state.fighters[1].health).toBeLessThan(MAX_HEALTH);
   });
 
   it("parries a mid by tapping toward inside the timing window", () => {
@@ -136,8 +143,8 @@ describe("arcade combat systems", () => {
 
   it("applies chip damage when a special move is blocked", () => {
     const simulation = readySimulation();
-    step(simulation, InputButton.Special, InputButton.Right);
-    advance(simulation, VESPER_ATTACKS.special.startupFrames, 0, InputButton.Right);
+    step(simulation, InputButton.Special, InputButton.Guard);
+    advance(simulation, VESPER_ATTACKS.special.startupFrames, 0, InputButton.Guard);
 
     expect(simulation.state.fighters[1].health).toBe(
       MAX_HEALTH - VESPER_ATTACKS.special.chipDamage,

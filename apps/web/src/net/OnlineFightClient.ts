@@ -43,10 +43,14 @@ const MAX_FRAME_BACKLOG = 240;
 const RECOVERY_STORAGE_KEY = "neon-rivals.online-recovery.v1";
 
 export function estimateInputDelayFrames(rttMs: number, jitterMs: number): number {
-  const oneWayBudget = Math.max(0, rttMs) * 0.5 + Math.max(0, jitterMs) * 2;
+  // Budget for one-way transit plus a modest jitter margin. The old 2x jitter multiplier and
+  // extra unconditional frame made transient tunnel spikes push play to the 8-frame cap.
+  // Rollback absorbs occasional late corrections, so a smaller 2–6 frame range feels much
+  // more responsive while still covering normal internet variance.
+  const oneWayBudget = Math.max(0, rttMs) * 0.5 + Math.max(0, jitterMs) * 0.75;
   return Math.max(
     BASE_INPUT_DELAY_FRAMES,
-    Math.min(MAX_INPUT_DELAY_FRAMES, Math.ceil(oneWayBudget / TICK_MS) + 1),
+    Math.min(MAX_INPUT_DELAY_FRAMES, Math.ceil(oneWayBudget / TICK_MS)),
   );
 }
 

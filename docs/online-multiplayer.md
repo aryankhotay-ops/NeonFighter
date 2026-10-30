@@ -6,7 +6,7 @@ Neon Rivals uses ephemeral two-player Colyseus rooms. The host creates a `fight`
 
 ## Authoritative flow
 
-1. Both clients join with matching protocol version 2.
+1. Both clients join with matching protocol version 3 (the Guard-control input layout).
 2. The room assigns deterministic player indexes and starts when both seats are occupied.
 3. Clients schedule input into a short future frame buffer and send only button bits, frame, and sequence.
 4. The server validates frame windows, sequence monotonicity, and the input bit mask.
@@ -18,9 +18,9 @@ Neon Rivals uses ephemeral two-player Colyseus rooms. The host creates a `fight`
 
 ## Latency handling
 
-The browser estimates round-trip time and jitter once per second. It derives an adaptive input delay between 3 and 8 frames from half-RTT plus a two-jitter safety budget. Low-latency matches stay at the minimum; unstable connections add buffer rather than allowing an unbounded queue.
+The browser estimates round-trip time and jitter once per second. It derives an adaptive input delay between 2 and 6 frames from half-RTT plus a 0.75-jitter safety margin. Low-latency matches stay at the minimum; unstable connections add a bounded buffer. When a temporary spike subsides, the client replaces its still-future scheduled inputs so the lead returns to the lower value; the previous scheduler could increase delay but never reduce it, leaving the rest of a match stuck at the peak.
 
-Each client predicts remote input by holding the previous value. It records 180 frames of states and applied inputs. When canonical inputs differ, it restores the state before the earliest changed frame and deterministically replays to the present. Periodic server snapshots correct any remaining checksum divergence or fast-forward a client that fell behind.
+Each client predicts remote input by holding the previous value. It records 180 frames of states and applied inputs. When canonical inputs differ, it restores the state before the earliest changed frame and deterministically replays to the present. Periodic server snapshots correct any remaining checksum divergence or fast-forward a client that fell behind. A client that is still behind uses at most two extra simulation steps per local tick until it is near the authoritative frame, avoiding repeated snapshot jumps without allowing an unbounded catch-up stall. Presentation smoothing is applied only to the remote fighter, reducing visible correction judder while the local fighter remains immediate.
 
 The fight HUD reports RTT, jitter, current delay, rollback count, and snapshot correction count.
 
