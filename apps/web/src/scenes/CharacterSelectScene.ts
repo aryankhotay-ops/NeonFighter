@@ -16,6 +16,7 @@ import {
   getFighterPresentation,
   type FighterPresentation,
 } from "../presentation/FighterPresentationConfig";
+import { drawFighterPortrait } from "../presentation/FighterArt";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
 import { drawArcadeBackdrop } from "../ui/ArcadeUi";
 
@@ -94,8 +95,10 @@ export class CharacterSelectScene extends Phaser.Scene {
       const y = 246 + row * 183;
       const panel = this.add.rectangle(0, 0, 520, 158, presentation.shadow, 0.94).setOrigin(0.5);
       panel.setStrokeStyle(4, presentation.primary, 0.72);
-      const portrait = this.createTemporaryPortrait(presentation);
-      portrait.setPosition(-191, -9).setScale(0.88);
+      const portraitHalo = this.add.circle(-191, -6, 62, presentation.primary, 0.13);
+      portraitHalo.setStrokeStyle(2, presentation.accent, 0.38);
+      const portrait = this.createFighterPortrait(presentation);
+      portrait.setPosition(-191, -7).setScale(0.9);
 
       const name = this.add.text(-118, -69, fighter.name.toUpperCase(), {
         color: "#ffffff",
@@ -138,7 +141,17 @@ export class CharacterSelectScene extends Phaser.Scene {
         .setOrigin(1, 0);
 
       const container = this.add
-        .container(x, y, [panel, portrait, name, epithet, style, superArt, description, lockLabel])
+        .container(x, y, [
+          panel,
+          portraitHalo,
+          portrait,
+          name,
+          epithet,
+          style,
+          superArt,
+          description,
+          lockLabel,
+        ])
         .setDepth(3);
       container.setSize(520, 158).setInteractive({ useHandCursor: true });
       container.on("pointerover", () => {
@@ -289,6 +302,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const snapshot = this.selection.snapshot;
     this.cards.forEach((card, index) => {
       const panel = card.getAt(0) as Phaser.GameObjects.Rectangle;
+      const portraitHalo = card.getAt(1) as Phaser.GameObjects.Arc;
       const fighter = FIGHTER_ROSTER[index];
       const lockLabel = this.lockLabels[index];
       if (!fighter || !lockLabel) return;
@@ -305,6 +319,8 @@ export class CharacterSelectScene extends Phaser.Scene {
         isCursor ? 0xffe45c : isLocked ? 0x67f28a : presentation.primary,
         isCursor || isLocked ? 1 : 0.72,
       );
+      portraitHalo.setFillStyle(presentation.primary, isCursor ? 0.3 : isLocked ? 0.22 : 0.13);
+      portraitHalo.setScale(isCursor ? 1.08 : 1);
       lockLabel.setText(isLocked ? `${selectedBy.join(" + ")} LOCKED` : "");
       card.setScale(isCursor ? 1.025 : 1);
       card.setAlpha(snapshot.phase === "ready" && !isLocked ? 0.45 : 1);
@@ -351,34 +367,9 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.matchupPanel.setVisible(true);
   }
 
-  private createTemporaryPortrait(presentation: FighterPresentation): Phaser.GameObjects.Graphics {
+  private createFighterPortrait(presentation: FighterPresentation): Phaser.GameObjects.Graphics {
     const portrait = this.add.graphics();
-    const broad = presentation.silhouette === "armor";
-    portrait.fillStyle(presentation.primary, 1);
-    portrait.fillCircle(0, -40, broad ? 28 : 24);
-    portrait.fillRoundedRect(broad ? -42 : -32, -11, broad ? 84 : 64, 91, 18);
-    portrait.lineStyle(broad ? 17 : 13, presentation.accent, 0.95);
-    portrait.lineBetween(broad ? -32 : -24, 7, broad ? -66 : -55, 62);
-    portrait.lineBetween(broad ? 32 : 24, 7, broad ? 66 : 55, 62);
-    portrait.lineStyle(broad ? 22 : 16, presentation.primary, 1);
-    portrait.lineBetween(-19, 67, -31, 112);
-    portrait.lineBetween(19, 67, 31, 112);
-
-    if (presentation.silhouette === "scarf") {
-      portrait.lineStyle(9, presentation.accent, 0.9);
-      portrait.lineBetween(-12, -20, -75, -2);
-    } else if (presentation.silhouette === "crest") {
-      portrait.fillStyle(presentation.accent, 1);
-      portrait.fillTriangle(-12, -62, 2, -93, 14, -60);
-    } else if (presentation.silhouette === "armor") {
-      portrait.fillStyle(presentation.accent, 0.9);
-      portrait.fillRoundedRect(-53, -10, 25, 38, 6);
-      portrait.fillRoundedRect(28, -10, 25, 38, 6);
-    } else {
-      portrait.fillStyle(presentation.shadow, 1);
-      portrait.fillTriangle(-35, 58, -22, 128, 0, 65);
-      portrait.fillTriangle(0, 65, 24, 128, 35, 58);
-    }
+    drawFighterPortrait(portrait, presentation);
     return portrait;
   }
 }

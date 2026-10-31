@@ -13,7 +13,6 @@
     "@colyseus/sdk": "0.18.8",
     "@neon-rivals/protocol": "workspace:*",
     "@neon-rivals/simulation": "workspace:*",
-    "@neon-rivals/test-tools": "workspace:*",
     "phaser": "3.90.0"
   },
   "devDependencies": {

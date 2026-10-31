@@ -8,7 +8,6 @@ import {
   toPixels,
   type FighterState,
 } from "@neon-rivals/simulation";
-import { createDeterminismFixture, runReplay } from "@neon-rivals/test-tools";
 import Phaser from "phaser";
 import { AudioManager } from "../audio/AudioManager";
 import { CpuController } from "../game/CpuController";
@@ -23,8 +22,17 @@ import { InputSource } from "../input/InputSource";
 import type { OnlineFightClient } from "../net/OnlineFightClient";
 import { OnlineRollbackController } from "../net/OnlineRollbackController";
 import { CombatEffects } from "../presentation/CombatEffects";
+import {
+  FIGHTER_FACE_TEXTURE_VARIANTS,
+  ensureFighterFaceTextures,
+  fighterFaceTextureKey,
+} from "../presentation/FighterArt";
 import { FighterView } from "../presentation/FighterView";
 import { getFighterPresentation } from "../presentation/FighterPresentationConfig";
+import {
+  shouldPresentSimulationFrame,
+  shouldRefreshDiagnostics,
+} from "../rendering/PresentationBudget";
 import { configureSmoothCamera } from "../rendering/SmoothRendering";
 import { StageView } from "../presentation/StageView";
 import {
@@ -38,6 +46,10 @@ interface FightSceneData extends Partial<MatchSetup> {
   readonly onlineClient?: OnlineFightClient;
   readonly fightTheme?: StageArt;
 }
+
+// Verified by tests/determinism.test.ts. Do not run a 10,000-frame replay in the browser:
+// doing so delayed every local and online match startup and unnecessarily enlarged the bundle.
+const VERIFIED_10K_REPLAY_CHECKSUM = 0x84f69b8f;
 
 export class FightScene extends Phaser.Scene {
   private readonly simulation = new Simulation();
@@ -54,6 +66,7 @@ export class FightScene extends Phaser.Scene {
   private inputSource!: InputSource;
   private stageView!: StageView;
   private fighterLayer!: Phaser.GameObjects.Graphics;
+  private fighterFaces!: [Phaser.GameObjects.Image, Phaser.GameObjects.Image];
   private effectLayer!: Phaser.GameObjects.Graphics;
   private hudBaseLayer!: Phaser.GameObjects.Graphics;
   private hudValueLayer!: Phaser.GameObjects.Graphics;
@@ -69,6 +82,13 @@ export class FightScene extends Phaser.Scene {
   private accumulatorMs = 0;
   private resultsScheduled = false;
   private pauseMenuOpen = false;
+  private lastPresentedFrame = -1;
+  private lastDiagnosticFrame = -1;
+  private lastHudSignature = "";
+  private lastTimerSeconds = -1;
+  private lastP1Label = "";
+  private lastP2Label = "";
+  private lastAnnouncementSignature = "";
   private renderedFighterPositions: [
     { x: number; feetY: number } | null,
     { x: number; feetY: number } | null,
@@ -95,6 +115,13 @@ export class FightScene extends Phaser.Scene {
     this.accumulatorMs = 0;
     this.resultsScheduled = false;
     this.pauseMenuOpen = false;
+    this.lastPresentedFrame = -1;
+    this.lastDiagnosticFrame = -1;
+    this.lastHudSignature = "";
+    this.lastTimerSeconds = -1;
+    this.lastP1Label = "";
+    this.lastP2Label = "";
+    this.lastAnnouncementSignature = "";
     this.renderedFighterPositions = [null, null];
   }
 
@@ -106,6 +133,21 @@ export class FightScene extends Phaser.Scene {
     this.pauseKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.stageView = new StageView(this, this.fightTheme);
     this.fighterLayer = this.add.graphics().setDepth(2);
+    const firstPresentation = this.presentationForPlayer(0);
+    const secondPresentation = this.presentationForPlayer(1);
+    // Cache only the two selected identities at match startup. The online room UI never pays
+    // this setup cost, and gameplay faces become two lightweight textured quads.
+    ensureFighterFaceTextures(this, firstPresentation);
+    ensureFighterFaceTextures(this, secondPresentation);
+    const neutralFace = FIGHTER_FACE_TEXTURE_VARIANTS[0]!;
+    this.fighterFaces = [
+      this.add
+        .image(0, 0, fighterFaceTextureKey(firstPresentation.fighterId, neutralFace))
+        .setDepth(2.2),
+      this.add
+        .image(0, 0, fighterFaceTextureKey(secondPresentation.fighterId, neutralFace))
+        .setDepth(2.2),
+    ];
     this.effectLayer = this.add.graphics().setDepth(3);
     this.hudBaseLayer = this.add.graphics().setDepth(4);
     this.hudValueLayer = this.add.graphics().setDepth(5);
@@ -195,9 +237,8 @@ export class FightScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDepth(6);
 
-    const fixture = runReplay(createDeterminismFixture(10_000));
     this.add
-      .text(1236, 28, `10K REPLAY  ${formatChecksum(fixture.checksum)}`, {
+      .text(1236, 28, `10K REPLAY  ${formatChecksum(VERIFIED_10K_REPLAY_CHECKSUM)}`, {
         align: "right",
         color: "#8fffb2",
         fontFamily: "monospace",
@@ -313,17 +354,19 @@ export class FightScene extends Phaser.Scene {
       this.accumulatorMs -= SIMULATION_STEP_MS;
     }
 
-    const colors: [number, number] = [
-      this.presentationForPlayer(0).primary,
-      this.presentationForPlayer(1).primary,
-    ];
-    this.effects.sync(this.simulation.state, colors);
     this.audio.update(time, this.simulation.state.round.phase, this.simulation.state.lastEvent);
-    const shake = this.effects.consumeShake();
-    if (shake > 0 && this.settings.screenShake) {
-      this.cameras.main.shake(90, shake / 2500, true);
+    if (shouldPresentSimulationFrame(this.simulation.state.frame, this.lastPresentedFrame)) {
+      const colors: [number, number] = [
+        this.presentationForPlayer(0).primary,
+        this.presentationForPlayer(1).primary,
+      ];
+      this.effects.sync(this.simulation.state, colors);
+      const shake = this.effects.consumeShake();
+      if (shake > 0 && this.settings.screenShake) {
+        this.cameras.main.shake(90, shake / 2500, true);
+      }
+      this.drawScene();
     }
-    this.drawScene();
 
     if (this.simulation.state.round.phase === "matchOver" && !this.resultsScheduled) {
       this.resultsScheduled = true;
@@ -344,6 +387,9 @@ export class FightScene extends Phaser.Scene {
 
   private drawScene(): void {
     const state = this.simulation.state;
+    // A 120/144 Hz display must not rebuild 60 Hz simulation presentation more than once.
+    if (!shouldPresentSimulationFrame(state.frame, this.lastPresentedFrame)) return;
+    this.lastPresentedFrame = state.frame;
     this.stageView.drawMotion(state.frame);
 
     this.fighterLayer.clear();
@@ -379,6 +425,10 @@ export class FightScene extends Phaser.Scene {
   private drawHudValues(): void {
     const graphics = this.hudValueLayer;
     const [p1, p2] = this.simulation.state.fighters;
+    const scores = this.simulation.state.round.scores;
+    const signature = `${p1.health}:${p1.meter}:${p2.health}:${p2.meter}:${scores[0]}:${scores[1]}`;
+    if (signature === this.lastHudSignature) return;
+    this.lastHudSignature = signature;
     const healthWidth = 428;
     const barY = 94;
     graphics.clear();
@@ -395,7 +445,6 @@ export class FightScene extends Phaser.Scene {
     graphics.fillStyle(this.presentationForPlayer(1).primary, 1);
     graphics.fillRect(1230 - p2MeterWidth, 125, p2MeterWidth, 9);
 
-    const scores = this.simulation.state.round.scores;
     for (let index = 0; index < 2; index += 1) {
       graphics.fillStyle(index < scores[0] ? 0xffd85a : 0x344057, 1);
       graphics.fillCircle(70 + index * 22, 151, 7);
@@ -408,30 +457,47 @@ export class FightScene extends Phaser.Scene {
     const state = this.simulation.state;
     const [p1, p2] = state.fighters;
     const seconds = Math.ceil(state.round.timerFrames / 60);
-    const checksum = formatChecksum(checksumState(state));
-    this.statusText.setText(`FRAME ${state.frame.toString().padStart(6, "0")}  ${checksum}`);
-    this.timerText.setText(String(seconds).padStart(2, "0"));
-    this.timerText.setColor(seconds <= 10 ? "#ff526f" : "#ffffff");
+    if (shouldRefreshDiagnostics(state.frame, this.lastDiagnosticFrame)) {
+      this.lastDiagnosticFrame = state.frame;
+      const checksum = formatChecksum(checksumState(state));
+      this.statusText.setText(`FRAME ${state.frame.toString().padStart(6, "0")}  ${checksum}`);
+      if (this.rollback && this.onlineClient) {
+        const latency = this.onlineClient.latency;
+        const reconciliation = this.rollback.stats;
+        this.networkText.setText(
+          `ONLINE · ${Math.round(latency.rttMs)}ms RTT · ${Math.round(latency.jitterMs)}ms JITTER\nDELAY ${latency.inputDelayFrames}f · ROLLBACK ${reconciliation.rollbacks} · FIX ${reconciliation.snapshotCorrections}`,
+        );
+      }
+    }
 
-    this.p1StateText.setText(this.fighterLabel(p1));
-    this.p2StateText.setText(this.fighterLabel(p2));
-    this.p1StateText.setColor(
-      `#${this.presentationForPlayer(0).primary.toString(16).padStart(6, "0")}`,
-    );
-    this.p2StateText.setColor(
-      `#${this.presentationForPlayer(1).primary.toString(16).padStart(6, "0")}`,
-    );
-    if (this.rollback && this.onlineClient) {
-      const latency = this.onlineClient.latency;
-      const reconciliation = this.rollback.stats;
-      this.networkText.setText(
-        `ONLINE · ${Math.round(latency.rttMs)}ms RTT · ${Math.round(latency.jitterMs)}ms JITTER\nDELAY ${latency.inputDelayFrames}f · ROLLBACK ${reconciliation.rollbacks} · FIX ${reconciliation.snapshotCorrections}`,
+    if (seconds !== this.lastTimerSeconds) {
+      this.lastTimerSeconds = seconds;
+      this.timerText.setText(String(seconds).padStart(2, "0"));
+      this.timerText.setColor(seconds <= 10 ? "#ff526f" : "#ffffff");
+    }
+
+    const p1Label = this.fighterLabel(p1);
+    if (p1Label !== this.lastP1Label) {
+      this.lastP1Label = p1Label;
+      this.p1StateText.setText(p1Label);
+      this.p1StateText.setColor(
+        `#${this.presentationForPlayer(0).primary.toString(16).padStart(6, "0")}`,
+      );
+    }
+    const p2Label = this.fighterLabel(p2);
+    if (p2Label !== this.lastP2Label) {
+      this.lastP2Label = p2Label;
+      this.p2StateText.setText(p2Label);
+      this.p2StateText.setColor(
+        `#${this.presentationForPlayer(1).primary.toString(16).padStart(6, "0")}`,
       );
     }
 
+    let announcement: string;
+    let announcementColor: string;
     if (state.round.phase === "intro") {
-      this.announcementText.setText(`ROUND ${state.round.number}\nREADY`);
-      this.announcementText.setColor("#ffffff");
+      announcement = `ROUND ${state.round.number}\nREADY`;
+      announcementColor = "#ffffff";
     } else if (state.round.phase === "roundOver") {
       const result =
         state.round.reason === "time" ? "TIME" : state.round.reason === "draw" ? "DRAW" : "K.O.";
@@ -439,18 +505,24 @@ export class FightScene extends Phaser.Scene {
         state.round.winner === -1
           ? ""
           : `\n${getFighterDefinition(this.matchSetup.fighters[state.round.winner ?? 0]).name.toUpperCase()} WINS`;
-      this.announcementText.setText(`${result}${winner}`);
-      this.announcementText.setColor("#ffd85a");
+      announcement = `${result}${winner}`;
+      announcementColor = "#ffd85a";
     } else if (state.round.phase === "matchOver") {
       const winner =
         state.round.winner === -1
           ? "DRAW MATCH"
           : `${getFighterDefinition(this.matchSetup.fighters[state.round.winner ?? 0]).name.toUpperCase()} WINS`;
-      this.announcementText.setText(`${winner}\nMATCH COMPLETE`);
-      this.announcementText.setColor("#ffd85a");
+      announcement = `${winner}\nMATCH COMPLETE`;
+      announcementColor = "#ffd85a";
     } else {
-      this.announcementText.setText(seconds <= 10 ? String(seconds) : "");
-      this.announcementText.setColor(seconds <= 10 ? "#ff526f" : "#ffffff");
+      announcement = seconds <= 10 ? String(seconds) : "";
+      announcementColor = seconds <= 10 ? "#ff526f" : "#ffffff";
+    }
+    const announcementSignature = `${announcementColor}:${announcement}`;
+    if (announcementSignature !== this.lastAnnouncementSignature) {
+      this.lastAnnouncementSignature = announcementSignature;
+      this.announcementText.setText(announcement);
+      this.announcementText.setColor(announcementColor);
     }
   }
 
@@ -475,7 +547,9 @@ export class FightScene extends Phaser.Scene {
 
     if (!shouldSmooth) {
       this.renderedFighterPositions[player] = target;
-      this.fighterView.draw(this.fighterLayer, fighter, this.presentationForPlayer(player), target);
+      const presentation = this.presentationForPlayer(player);
+      this.fighterView.draw(this.fighterLayer, fighter, presentation, target);
+      this.syncFighterFace(player, fighter, presentation, target);
       return;
     }
 
@@ -489,12 +563,23 @@ export class FightScene extends Phaser.Scene {
             feetY: Phaser.Math.Linear(previous.feetY, target.feetY, 0.42),
           };
     this.renderedFighterPositions[player] = renderPosition;
-    this.fighterView.draw(
-      this.fighterLayer,
-      fighter,
-      this.presentationForPlayer(player),
-      renderPosition,
-    );
+    const presentation = this.presentationForPlayer(player);
+    this.fighterView.draw(this.fighterLayer, fighter, presentation, renderPosition);
+    this.syncFighterFace(player, fighter, presentation, renderPosition);
+  }
+
+  private syncFighterFace(
+    player: 0 | 1,
+    fighter: FighterState,
+    presentation: ReturnType<typeof getFighterPresentation>,
+    renderPosition: { x: number; feetY: number },
+  ): void {
+    const sprite = this.fighterFaces[player];
+    const face = this.fighterView.faceRenderState(fighter, presentation, renderPosition);
+    if (sprite.texture.key !== face.textureKey) sprite.setTexture(face.textureKey);
+    sprite.setPosition(face.x, face.y);
+    sprite.setScale(face.scaleX, face.scaleY);
+    sprite.setRotation(face.rotation);
   }
 
   public resumeFromPauseMenu(): void {

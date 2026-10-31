@@ -274,9 +274,6 @@ importers:
       "@neon-rivals/simulation":
         specifier: workspace:*
         version: link:../../packages/simulation
-      "@neon-rivals/test-tools":
-        specifier: workspace:*
-        version: link:../../packages/test-tools
       phaser:
         specifier: 3.90.0
         version: 3.90.0

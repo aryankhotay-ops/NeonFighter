@@ -13,11 +13,11 @@ The first combat slice includes:
 - Four selectable animated arenas rendered in Phaser: Neon Transit, Storm Rooftop, Reactor Ring, and Midnight Harbor
 - Four local original fighters with distinct silhouettes, movement, health, normals, specials, and Super Arts
 - Reusable per-fighter combat configurations under `packages/simulation/src/fighters/`
-- Replaceable temporary vector sprites configured separately from combat data
-- State-driven procedural animations tied directly to deterministic actions and move frames
+- Original vector fighters with articulated two-segment limbs, hands, boots, costume panels, hair, facial features, and distinct body proportions configured separately from combat data
+- State-driven body animation plus five setup-time cached face textures per selected fighter, including blinking, focused attack expressions, hit reactions, and knockout faces without rebuilding facial vectors every frame
 - Event-driven impact, block, parry, special, super, KO, and camera-shake effects
 - Original synthesized attack, hit, block, parry, special, super, KO, and background music audio
-- Cached static stage/HUD geometry with separate lightweight motion, fighter, effect, and HUD-value layers
+- Cached static stage/HUD geometry, change-only HUD redraws, 4 Hz diagnostic text, 30 Hz background motion, and at most one fighter presentation pass per 60 Hz simulation frame
 - A deterministic 60 Hz, integer-subpixel simulation
 - Walk, crouch, jump, super jump, double-tap dash, facing, stage bounds, and pushboxes
 - Light, crouching-low, overhead-heavy, special, and super attacks
@@ -32,7 +32,7 @@ The first combat slice includes:
 - A lightweight original Circuit Marshal animation that aims a laser at the hovered/selected menu option and switches to a two-handed, muzzle-on aim straight at the viewer (sights under the visor, laser flaring into the camera) on Exit Game
 - A visible fight pause/menu button plus Esc shortcut, with resume, live audio/effect settings, controls, and exit actions
 - Smooth rendering for every menu and gameplay scene, with high-DPI text, antialiased WebGL output, aligned pointer input, and no scanline overlay
-- Character selection showing every fighter's name, temporary portrait, fighting style, and Super Art; the user explicitly chooses both their fighter and the human/CPU opponent's fighter
+- Character selection showing every fighter as an original big-head vinyl-collectible portrait with unique proportions, hair, face gear, costume, stance, fighting style, and Super Art; the user explicitly chooses both their fighter and the human/CPU opponent's fighter
 - Per-player lock indicators plus a final matchup review showing both selections before the match starts
 - Explicit cancellation: undo the final Player 2 choice, undo Player 1's lock, or return to the main menu
 - A dedicated post-match results screen
@@ -44,18 +44,29 @@ The first combat slice includes:
 - A deterministic 10,000-frame replay fixture plus combat regression tests
 - Latched keyboard presses and an eight-frame deterministic command buffer prevent quick action taps from being lost between render ticks or during short hitstop windows
 
-Production sprite sheets, gamepad testing, hosted internet deployment, and wider network-condition QA remain later milestones. All current graphics and audio are original/procedural; no Street Fighter III media is included.
+Production sprite sheets, gamepad testing, hosted internet deployment, and wider network-condition QA remain later milestones. All current graphics and audio are original/procedural; no Street Fighter III media is included. CC0 character-art candidates researched for any future sprite-sheet replacement are recorded in [docs/character-art-references.md](docs/character-art-references.md).
 
 ## Original roster
 
-| Fighter | Temporary silhouette                     | Style and movement                                           | Normals                                      | Special            | Super Art        |
+| Fighter | Silhouette                               | Style and movement                                           | Normals                                      | Special            | Super Art        |
 | ------- | ---------------------------------------- | ------------------------------------------------------------ | -------------------------------------------- | ------------------ | ---------------- |
 | Vesper  | Lean boxer with a trailing courier scarf | Courier boxing; fastest walk and dash, lower health          | Relay Jab, Signal Sweep, Crosswind Hook      | Slipstream Barrage | Midnight Express |
 | Nova    | Tall aerial striker with a bright crest  | Aerial kickboxing; highest jump and strongest air control    | Prism Palm, Comet Low, Solar Axe             | Orbit Breaker      | Zenith Spiral    |
 | Rook    | Broad armored heavyweight                | Foundry brawling; slow, grounded, highest health and damage  | Iron Knuckle, Foundation Kick, Gantry Hammer | Seismic Clamp      | Citadel Collapse |
 | Sable   | Long-coated precision duelist            | Vector savate; balanced counter movement and longest normals | Ghost Tap, Shadow Scythe, Null Heel          | Phase Reversal     | Event Horizon    |
 
-Combat properties and move frame data are independent of presentation. Final original or properly licensed sprite sheets can replace the temporary silhouettes without changing simulation behavior.
+Combat properties and move frame data are independent of presentation. Final original or properly licensed sprite sheets can replace the vector silhouettes without changing simulation behavior.
+
+The four gameplay silhouettes now separate at a glance: Vesper is a narrow scarf-and-satchel courier, Nova is a tall orbital comet striker, Rook is a very broad plated warden, and Sable is a long split-coat duelist. Character-select art deliberately uses a roughly half-head/half-body collectible proportion while keeping all costumes and identities original to Neon Rivals.
+
+## Presentation performance budget
+
+- Deterministic simulation, input capture, rollback, and network transport remain at 60 Hz and do not depend on face animation.
+- Only the two fighters selected for a match are cached. Each identity uses five transparent 112 × 112 face textures; the maximum nominal RGBA pixel storage is 501,760 bytes per match, and gameplay transforms two image quads instead of re-tessellating facial paths.
+- Rendering is skipped when the simulation frame has not advanced, preventing 120/144 Hz displays from duplicating 60 Hz graphics work.
+- Health/meter graphics redraw only when their values change. Timer, fighter labels, announcements, and online diagnostics update at their natural lower rates.
+- The Online Play lobby and create/join room flow remain event-driven text UI. They do not create fighter textures or run presentation animation.
+- The browser no longer computes the 10,000-frame determinism fixture when a match starts. Its test-verified checksum is displayed as build data, while the full replay remains in automated tests.
 
 ## Requirements
 

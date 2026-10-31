@@ -40,6 +40,8 @@ export class OnlineLobbyScene extends Phaser.Scene {
 
   public create(): void {
     configureSmoothCamera(this);
+    // Keep room creation event-driven and text-only. Fighter face textures are intentionally
+    // generated later in FightScene, after both players are ready, so hosting/joining stays light.
     const runtimeConfig = loadWebRuntimeConfig();
     this.settings = loadSettings();
     this.serverCandidates = runtimeConfig.multiplayerServerCandidates;
